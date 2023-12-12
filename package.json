@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "description": "",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": "bin/check-eslint-config-compat.js",
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +21,10 @@
   "bugs": {
     "url": "https://github.com/sajikix/check-eslint-config-compat/issues"
   },
-  "homepage": "https://github.com/sajikix/check-eslint-config-compat#readme"
+  "homepage": "https://github.com/sajikix/check-eslint-config-compat#readme",
+  "devDependencies": {
+    "@tsconfig/node18": "^18.2.2",
+    "@types/node": "^20.10.4",
+    "typescript": "^5.3.3"
+  }
 }

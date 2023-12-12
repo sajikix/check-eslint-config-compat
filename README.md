@@ -1,0 +1,1 @@
+# check-eslint-config-compat

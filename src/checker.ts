@@ -344,7 +344,14 @@ const isFlatConfig = async (configPath: string) => {
     searchPlaces: [configPath],
   }).search();
 
-  return Array.isArray(configSearchResult.config);
+  const config = configSearchResult?.config;
+
+  if (!config) {
+    console.error(pico.red(`🚨 config file id not found at ${configPath}`));
+    process.exit(1);
+  }
+
+  return Array.isArray(config);
 };
 
 export const checkConfigCompatibility = async (

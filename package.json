@@ -1,0 +1,22 @@
+{
+  "name": "check-eslint-config-compat",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/sajikix/check-eslint-config-compat.git"
+  },
+  "keywords": [
+    "eslint"
+  ],
+  "author": "Ryusei Sajiki",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sajikix/check-eslint-config-compat/issues"
+  },
+  "homepage": "https://github.com/sajikix/check-eslint-config-compat#readme"
+}

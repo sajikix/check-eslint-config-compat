@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { checkConfigCompatibility } from "./checker";
 
 const program = new Command();
 
@@ -10,7 +11,9 @@ program
     "File extensions to apply lint. (like: 'js,ts,jsx,tsx')"
   )
   .action((options) => {
-    console.log(options);
+    checkConfigCompatibility(options.old || ".", options.new || ".", {
+      extensions: options.ext,
+    });
   });
 
 program.parse();

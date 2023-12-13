@@ -25,11 +25,16 @@
   "homepage": "https://github.com/sajikix/check-eslint-config-compat#readme",
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
+    "@types/lodash": "^4.14.202",
     "@types/node": "^20.10.4",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "cosmiconfig": "^9.0.0",
+    "glob": "^10.3.10",
+    "lodash": "^4.17.21",
+    "picocolors": "^1.0.0"
   }
 }

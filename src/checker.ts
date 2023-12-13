@@ -56,7 +56,7 @@ const getTargetFilePaths = async ({
     grep.stderr.on("data", (data) => {
       reject([]);
     });
-    grep.stdout.on("close", (code) => {
+    grep.stdout.on("close", () => {
       console.log("Finished listing target files!");
       resolve(
         outputs
@@ -107,7 +107,11 @@ const checkRuleDiff = async (
       ...getFlatConfigFiles(oldConfig),
     ];
   } else {
-    const oldConfigOverrides = oldConfig?.overrides || [];
+    const oldConfigOverrides =
+      (oldConfig?.overrides as Array<{
+        files: string[];
+        rules: Record<string, unknown>;
+      }>) || [];
     overridePatterns = [
       ...overridePatterns,
       ...oldConfigOverrides.map((override) => override.files).flat(),
@@ -120,7 +124,11 @@ const checkRuleDiff = async (
       ...getFlatConfigFiles(newConfig),
     ];
   } else {
-    const newConfigOverrides = newConfig?.overrides || [];
+    const newConfigOverrides =
+      (newConfig?.overrides as Array<{
+        files: string[];
+        rules: Record<string, unknown>;
+      }>) || [];
     overridePatterns = [
       ...overridePatterns,
       ...newConfigOverrides.map((override) => override.files).flat(),
@@ -208,7 +216,14 @@ const isSameSeverities = (
   return false;
 };
 
-const isSameRules = (oldRules, newRules) => {
+type Rules = {
+  [rule: string]: [
+    0 | 1 | 2 | "off" | "warn" | "error",
+    ...Record<string, unknown>[]
+  ];
+};
+
+const isSameRules = (oldRules: Rules, newRules: Rules) => {
   const oldRuleKeys = Object.keys(oldRules);
   const newRuleKeys = Object.keys(newRules);
 
@@ -319,24 +334,30 @@ type CheckConfigCompatibilityOptions = {
 
 const checkConfigFile = async (configPath: string, isFlatConfig: boolean) => {
   console.log(`target : ${configPath}`);
-  try {
-    await exec(
-      `ESLINT_USE_FLAT_CONFIG=${isFlatConfig} npx eslint ${configPath} --config ${configPath}`
-    );
-  } catch (e) {
-    const errorMessages = e?.stderr
-      ?.split("\n")
-      .filter((line) => line !== "") as string[];
-    console.error(
-      pico.red("🚨 ESLint config is invalid. Detailed errors are as follows.")
-    );
-    errorMessages.forEach((message) => {
-      console.error(pico.red(`  ${message}`));
-    });
-    process.exit(1);
-  } finally {
-    console.log(pico.green("✅ This config is valid."));
-  }
+  actualExec(
+    `ESLINT_USE_FLAT_CONFIG=${isFlatConfig} npx eslint ${configPath} --config ${configPath}`,
+    (err, stdout, stderr) => {
+      if (err) {
+        console.error(pico.red(`🚨 node exec error : ${err}`));
+        process.exit(1);
+      }
+      if (stderr !== "") {
+        const errorMessages = stderr
+          ?.split("\n")
+          .filter((line) => line !== "") as string[];
+        console.error(
+          pico.red(
+            "🚨 ESLint config is invalid. Detailed errors are as follows."
+          )
+        );
+        errorMessages.forEach((message) => {
+          console.error(pico.red(`  ${message}`));
+        });
+        process.exit(1);
+      }
+      console.log(pico.green("✅ This config is valid."));
+    }
+  );
 };
 
 const isFlatConfig = async (configPath: string) => {

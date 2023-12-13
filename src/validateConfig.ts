@@ -1,5 +1,6 @@
 import { exec } from "node:child_process";
 import pico from "picocolors";
+import { TEMP_FILE_PATH } from "./constants";
 
 export const validateConfig = async (
   configPath: string,
@@ -8,12 +9,11 @@ export const validateConfig = async (
   return new Promise(function (resolve, reject) {
     console.log(`target : ${configPath}`);
     exec(
-      `ESLINT_USE_FLAT_CONFIG=${isFlatConfig} npx eslint ${configPath} --config ${configPath}`,
+      `ESLINT_USE_FLAT_CONFIG=${isFlatConfig} npx eslint ${TEMP_FILE_PATH} --config ${configPath}`,
       (err, stdout, stderr) => {
         if (err) {
           console.error(pico.red(`🚨 node exec error : ${err}`));
-          reject();
-          process.exit(1);
+          throw new Error();
         }
         if (stderr !== "") {
           const errorMessages = stderr
@@ -27,8 +27,7 @@ export const validateConfig = async (
           errorMessages.forEach((message) => {
             console.error(pico.red(`  ${message}`));
           });
-          reject();
-          process.exit(1);
+          throw new Error();
         }
         console.log(pico.green("✅ This config is valid."));
         resolve();

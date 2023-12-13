@@ -52,7 +52,7 @@ export const compareTargetFilePaths = async (
             `...and ${decrements.length - 10} more files`,
         ]
       );
-    process.exit(1);
+    throw new Error();
   }
   console.log(pico.green("✅ No difference in lint targets"));
   return true;

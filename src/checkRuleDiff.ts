@@ -7,6 +7,7 @@ import { exec as actualExec } from "node:child_process";
 import { promisify } from "node:util";
 import pico from "picocolors";
 import { ConfigInfo } from "./types";
+import { TEMP_FILE_PATH } from "./constants";
 
 const exec = promisify(actualExec);
 
@@ -81,7 +82,7 @@ export const checkRuleDiff = async (
 
   console.log("Check difference of rules in following paths.");
 
-  for (const ruleTestFilePath of uniq([...ruleTestFilePaths, "temp.js"])) {
+  for (const ruleTestFilePath of uniq([...ruleTestFilePaths, TEMP_FILE_PATH])) {
     console.log(`  - ${ruleTestFilePath}`);
     const { stdout: oldRulesStdout } = await exec(
       `ESLINT_USE_FLAT_CONFIG=${oldConfigMeta.isFlatConfig} npx eslint --print-config ${ruleTestFilePath} --config ${oldConfigMeta.configPath}`
@@ -92,7 +93,7 @@ export const checkRuleDiff = async (
         pico.red("🚨 ESLint has not been applied to this file in old config")
       );
       console.error(pico.red(`  - ${ruleTestFilePath}`));
-      process.exit(1);
+      throw new Error();
     }
     const oldRules = JSON.parse(oldRulesStdout).rules;
 
@@ -105,12 +106,12 @@ export const checkRuleDiff = async (
         pico.red("🚨 ESLint has not been applied to this file in new config")
       );
       console.error(pico.red(`  - ${ruleTestFilePath}`));
-      process.exit(1);
+      throw new Error();
     }
     const newRules = JSON.parse(newRulesStdout).rules;
 
     if (!isSameRules(oldRules, newRules)) {
-      process.exit(1);
+      throw new Error();
     }
   }
   console.log(pico.green("✅ No difference in lint rules"));

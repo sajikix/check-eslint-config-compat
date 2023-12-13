@@ -10,7 +10,7 @@ export const isFlatConfig = async (configPath: string) => {
 
   if (!config) {
     console.error(pico.red(`🚨 config file id not found at ${configPath}`));
-    process.exit(1);
+    throw new Error();
   }
 
   return Array.isArray(config);

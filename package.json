@@ -1,5 +1,5 @@
 {
-  "name": "check-eslint-config-compat",
+  "name": "@sajikix/check-eslint-config-compat",
   "version": "0.0.1",
   "description": "",
   "main": "dist/index.js",
@@ -8,11 +8,17 @@
   "scripts": {
     "build": "tsc",
     "cli": "tsx src/cli.ts",
+    "format": "prettier --write src/**/*",
+    "lint": "eslint ./src",
+    "release": "npm run build && npm publish",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/sajikix/check-eslint-config-compat.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "eslint"
@@ -24,9 +30,12 @@
   },
   "homepage": "https://github.com/sajikix/check-eslint-config-compat#readme",
   "devDependencies": {
+    "@cybozu/eslint-config": "^22.0.2",
     "@tsconfig/node18": "^18.2.2",
     "@types/lodash": "^4.14.202",
     "@types/node": "^20.10.4",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.1",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   },

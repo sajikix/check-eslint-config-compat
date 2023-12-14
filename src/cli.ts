@@ -8,7 +8,7 @@ program
   .option("-n, --new <string>", "Path for new eslint config")
   .option(
     "-e, --ext <string>",
-    "File extensions to apply lint. (like: 'js,ts,jsx,tsx')"
+    "File extensions to apply lint. (like: 'js,ts,jsx,tsx')",
   )
   .action((options) => {
     checkConfigCompatibility(options.old || ".", options.new || ".", {

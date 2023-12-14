@@ -13,7 +13,7 @@ const exec = promisify(actualExec);
 
 export const checkRuleDiff = async (
   oldConfigMeta: ConfigInfo,
-  newConfigMeta: ConfigInfo
+  newConfigMeta: ConfigInfo,
 ) => {
   const oldConfigSearchResult = await cosmiconfig("eslint", {
     searchPlaces: [oldConfigMeta.configPath],
@@ -85,12 +85,12 @@ export const checkRuleDiff = async (
   for (const ruleTestFilePath of uniq([...ruleTestFilePaths, TEMP_FILE_PATH])) {
     console.log(`  - ${ruleTestFilePath}`);
     const { stdout: oldRulesStdout } = await exec(
-      `ESLINT_USE_FLAT_CONFIG=${oldConfigMeta.isFlatConfig} npx eslint --print-config ${ruleTestFilePath} --config ${oldConfigMeta.configPath}`
+      `ESLINT_USE_FLAT_CONFIG=${oldConfigMeta.isFlatConfig} npx eslint --print-config ${ruleTestFilePath} --config ${oldConfigMeta.configPath}`,
     );
 
     if (oldRulesStdout.startsWith("undefined")) {
       console.error(
-        pico.red("🚨 ESLint has not been applied to this file in old config")
+        pico.red("🚨 ESLint has not been applied to this file in old config"),
       );
       console.error(pico.red(`  - ${ruleTestFilePath}`));
       throw new Error();
@@ -98,12 +98,12 @@ export const checkRuleDiff = async (
     const oldRules = JSON.parse(oldRulesStdout).rules;
 
     const { stdout: newRulesStdout } = await exec(
-      `ESLINT_USE_FLAT_CONFIG=${newConfigMeta.isFlatConfig} npx eslint --print-config ${ruleTestFilePath} --config ${newConfigMeta.configPath}`
+      `ESLINT_USE_FLAT_CONFIG=${newConfigMeta.isFlatConfig} npx eslint --print-config ${ruleTestFilePath} --config ${newConfigMeta.configPath}`,
     );
 
     if (newRulesStdout.startsWith("undefined")) {
       console.error(
-        pico.red("🚨 ESLint has not been applied to this file in new config")
+        pico.red("🚨 ESLint has not been applied to this file in new config"),
       );
       console.error(pico.red(`  - ${ruleTestFilePath}`));
       throw new Error();
@@ -130,7 +130,7 @@ const getFlatConfigFiles = (flatConfig: FlatConfig) => {
 
 const isSameSeverities = (
   oldSeverities: 0 | 1 | 2 | "off" | "warn" | "error",
-  newSeverities: 0 | 1 | 2 | "off" | "warn" | "error"
+  newSeverities: 0 | 1 | 2 | "off" | "warn" | "error",
 ) => {
   if (oldSeverities === newSeverities) {
     return true;
@@ -159,7 +159,7 @@ const isSameSeverities = (
 type Rules = {
   [rule: string]: [
     0 | 1 | 2 | "off" | "warn" | "error",
-    ...Record<string, unknown>[]
+    ...Array<Record<string, unknown>>,
   ];
 };
 
@@ -195,8 +195,8 @@ const isSameRules = (oldRules: Rules, newRules: Rules) => {
         console.error(pico.red(`  - Severity for "${key}" rule is different.`));
         console.error(
           pico.red(
-            `  - value in old config is "${oldRules[key][0]}", but in new config it is "${newRules[key][0]}".`
-          )
+            `  - value in old config is "${oldRules[key][0]}", but in new config it is "${newRules[key][0]}".`,
+          ),
         );
         return false;
       }
@@ -204,7 +204,7 @@ const isSameRules = (oldRules: Rules, newRules: Rules) => {
         if (!isEqual(oldRules[key][i], newRules[key][i])) {
           console.error(pico.red("🚨 There is a difference in lint rules"));
           console.error(
-            pico.red(`  - ${oldRules[key]} rule options are different.`)
+            pico.red(`  - ${oldRules[key]} rule options are different.`),
           );
           return false;
         }

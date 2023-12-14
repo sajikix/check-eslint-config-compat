@@ -4,7 +4,7 @@ import { TEMP_FILE_PATH } from "./constants";
 
 export const validateConfig = async (
   configPath: string,
-  isFlatConfig: boolean
+  isFlatConfig: boolean,
 ): Promise<void> => {
   return new Promise(function (resolve, reject) {
     console.log(`target : ${configPath}`);
@@ -21,8 +21,8 @@ export const validateConfig = async (
             .filter((line) => line !== "") as string[];
           console.error(
             pico.red(
-              "🚨 ESLint config is invalid. Detailed errors are as follows."
-            )
+              "🚨 ESLint config is invalid. Detailed errors are as follows.",
+            ),
           );
           errorMessages.forEach((message) => {
             console.error(pico.red(`  ${message}`));
@@ -31,7 +31,7 @@ export const validateConfig = async (
         }
         console.log(pico.green("✅ This config is valid."));
         resolve();
-      }
+      },
     );
   });
 };

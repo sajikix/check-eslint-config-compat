@@ -13,7 +13,7 @@ type CheckConfigCompatibilityOptions = {
 export const checkConfigCompatibility = async (
   oldConfigPath: string,
   newConfigPath: string,
-  options?: Partial<CheckConfigCompatibilityOptions>
+  options?: Partial<CheckConfigCompatibilityOptions>,
 ) => {
   await writeFile(TEMP_FILE_PATH, "");
 
@@ -31,13 +31,13 @@ export const checkConfigCompatibility = async (
     await compareTargetFilePaths(
       { configPath: oldConfigPath, isFlatConfig: isOldConfigFlat },
       { configPath: newConfigPath, isFlatConfig: isNewConfigFlat },
-      extensions
+      extensions,
     );
     console.log("============================");
     console.log(pico.blue("Step3. Check ruleset are same."));
     await checkRuleDiff(
       { configPath: oldConfigPath, isFlatConfig: isOldConfigFlat },
-      { configPath: newConfigPath, isFlatConfig: isNewConfigFlat }
+      { configPath: newConfigPath, isFlatConfig: isNewConfigFlat },
     );
     console.log("============================");
     console.log(pico.green("🎉 All checks are passed!"));

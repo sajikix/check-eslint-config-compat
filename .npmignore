@@ -1,0 +1,9 @@
+.github/
+src/
+.commitlintrc.js
+.eslintignore
+.eslintrc.js
+.prettierrc.js
+tsconfig.json
+.env
+.envrc

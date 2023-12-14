@@ -13,7 +13,7 @@ type GetTargetFilePathsArgs = {
 export const compareTargetFilePaths = async (
   oldConfigMeta: ConfigInfo,
   newConfigMeta: ConfigInfo,
-  extensions: string[]
+  extensions: string[],
 ) => {
   const oldTargetFilePaths = await getTargetFilePaths({
     configPath: oldConfigMeta.configPath,
@@ -41,7 +41,7 @@ export const compareTargetFilePaths = async (
           ...increments.slice(0, 10),
           increments.length > 10 &&
             `...and ${increments.length - 10} more files`,
-        ]
+        ],
       );
     decrements.length > 0 &&
       console.error(
@@ -50,7 +50,7 @@ export const compareTargetFilePaths = async (
           ...decrements.slice(0, 10),
           decrements.length > 10 &&
             `...and ${decrements.length - 10} more files`,
-        ]
+        ],
       );
     throw new Error();
   }
@@ -67,8 +67,8 @@ const getTargetFilePaths = async ({
   return new Promise(function (resolve, reject) {
     console.log(
       `Search target files in ${pico.bold(
-        isFlatConfig ? "new" : "old"
-      )} config.`
+        isFlatConfig ? "new" : "old",
+      )} config.`,
     );
     console.log(pico.white(`  - configPath: ${configPath}`));
     console.log(pico.white(`  - extensions: ${extensions.join(",")}`));
@@ -80,10 +80,10 @@ const getTargetFilePaths = async ({
       [
         "-c",
         `'ESLINT_USE_FLAT_CONFIG=${isFlatConfig} eslint ${targetDir} --ext ${extensions.join(
-          ","
+          ",",
         )} --config ${configPath} --debug'`,
       ],
-      { shell: true }
+      { shell: true },
     );
     const grep = spawn("grep", ['"Parsing\\ssuccessful:"'], {
       shell: true,
@@ -106,7 +106,7 @@ const getTargetFilePaths = async ({
           .map((line) => line.split("Parsing successful: ")[1])
           .filter((line) => !!line)
           .slice()
-          .sort()
+          .sort(),
       );
     });
   });

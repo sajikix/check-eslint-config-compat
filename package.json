@@ -45,5 +45,8 @@
     "glob": "^10.3.10",
     "lodash": "^4.17.21",
     "picocolors": "^1.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0"
   }
 }

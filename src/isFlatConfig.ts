@@ -6,12 +6,16 @@ export const isFlatConfig = async (configPath: string) => {
     searchPlaces: [configPath],
   }).search();
 
-  const config = configSearchResult?.config;
+  const foundConfigPath = configSearchResult?.filepath;
 
-  if (!config) {
+  if (!foundConfigPath) {
     console.error(pico.red(`🚨 config file id not found at ${configPath}`));
     throw new Error();
   }
 
-  return Array.isArray(config);
+  const configModule = await import(foundConfigPath);
+
+  const configObject = await configModule.default;
+
+  return Array.isArray(configObject);
 };

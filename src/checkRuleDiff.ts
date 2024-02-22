@@ -11,6 +11,7 @@ import { TEMP_FILE_PATH } from "./constants";
 
 const exec = promisify(actualExec);
 
+// eslint-disable-next-line max-statements
 export const checkRuleDiff = async (
   oldConfigMeta: ConfigInfo,
   newConfigMeta: ConfigInfo,
@@ -20,20 +21,22 @@ export const checkRuleDiff = async (
   }).search();
 
   const oldConfig = oldConfigSearchResult?.config;
+  const oldConfigPath = oldConfigSearchResult?.filepath;
 
   const newConfigSearchResilt = await cosmiconfig("eslint", {
     searchPlaces: [newConfigMeta.configPath],
   }).search();
 
   const newConfig = newConfigSearchResilt?.config;
+  const newConfigPath = newConfigSearchResilt?.filepath;
 
   let flatConfigFilesPatterns: string[] = [];
   let overridePatterns: string[] = [];
 
-  if (oldConfigMeta.isFlatConfig) {
+  if (oldConfigMeta.isFlatConfig && oldConfigPath) {
     flatConfigFilesPatterns = [
       ...flatConfigFilesPatterns,
-      ...getFlatConfigFiles(oldConfig),
+      ...(await getFlatConfigFiles(oldConfigPath)),
     ];
   } else {
     const oldConfigOverrides =
@@ -47,10 +50,10 @@ export const checkRuleDiff = async (
     ];
   }
 
-  if (newConfigMeta.isFlatConfig) {
+  if (newConfigMeta.isFlatConfig && newConfigPath) {
     flatConfigFilesPatterns = [
       ...flatConfigFilesPatterns,
-      ...getFlatConfigFiles(newConfig),
+      ...(await getFlatConfigFiles(newConfigPath)),
     ];
   } else {
     const newConfigOverrides =
@@ -121,8 +124,10 @@ type FlatConfig = Array<{
   files?: string[];
   rules: Record<string, unknown>;
 }>;
-const getFlatConfigFiles = (flatConfig: FlatConfig) => {
-  return flatConfig
+const getFlatConfigFiles = async (configPath: string) => {
+  const configModule = await import(configPath);
+  const configObject = (await configModule.default) as FlatConfig;
+  return configObject
     .map((config) => config.files)
     .filter((files) => !!files)
     .flat() as string[];

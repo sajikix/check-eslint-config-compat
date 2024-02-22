@@ -58,7 +58,7 @@ export const compareTargetFilePaths = async (
   return true;
 };
 
-const getTargetFilePaths = async ({
+export const getTargetFilePaths = async ({
   configPath,
   extensions,
   targetDir,

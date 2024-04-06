@@ -1,22 +1,23 @@
 import { Command } from "commander";
-import { checkConfigCompatibility } from "./checker";
-import { extract } from "./extract";
+// import { checkConfigCompatibility } from "./checker";
+import { generateOldConfigCompatData } from "./generateOldConfigCompatData";
+import { compareWithCompatInfo } from "./compareWithCompatInfo";
 
 const program = new Command();
 
-program
-  .command("compare")
-  .option("-o, --old <string>", "Path for old eslint config")
-  .option("-n, --new <string>", "Path for new eslint config")
-  .option(
-    "-e, --ext <string>",
-    "File extensions to apply lint. (like: 'js,ts,jsx,tsx')",
-  )
-  .action((options) => {
-    checkConfigCompatibility(options.old || ".", options.new || ".", {
-      extensions: options.ext,
-    });
-  });
+// program
+//   .command("compare")
+//   .option("-o, --old <string>", "Path for old eslint config")
+//   .option("-n, --new <string>", "Path for new eslint config")
+//   .option(
+//     "-e, --ext <string>",
+//     "File extensions to apply lint. (like: 'js,ts,jsx,tsx')",
+//   )
+//   .action((options) => {
+//     checkConfigCompatibility(options.old || ".", options.new || ".", {
+//       extensions: options.ext,
+//     });
+//   });
 
 program
   .command("extract")
@@ -26,22 +27,37 @@ program
     "File extensions to apply lint. (like: 'js,ts,jsx,tsx')",
   )
   .option("-o, --output <string>", "Path for output file")
+  .option("-r, --overrides <string>", "Override patterns")
   .action((options) => {
-    extract(options.config || ".", options.output || "data.json", {
-      extensions: options.ext,
+    if (!options.config) {
+      console.error("Config path is required.");
+      return;
+    }
+    generateOldConfigCompatData({
+      configPath: options.config,
+      outputPath: options.output,
+      supportExtensions: options.ext.split(","),
+      overridePatterns: options.overrides && options.overrides.split(","),
     });
   });
 
 program
-  .command("compare-with-extracted")
+  .command("compare")
   .option("-c, --config <string>", "Path for eslint config")
   .option("-i, --import-path <string>", "Path for extracted file")
   .option(
     "-e, --ext <string>",
     "File extensions to apply lint. (like: 'js,ts,jsx,tsx')",
   )
-  .action((option) => {
-    //
+  .action((options) => {
+    if (!options.config) {
+      console.error("Config path is required.");
+      return;
+    }
+    compareWithCompatInfo({
+      configPath: options.config,
+      compatFilePath: options.importPath,
+    });
   });
 
 program.parse();

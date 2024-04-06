@@ -1,20 +1,12 @@
 import { cosmiconfig } from "cosmiconfig";
 import { glob } from "glob";
 import { uniq } from "lodash";
-import { TEMP_FILE_PATH } from "./constants";
-import { ConfigInfo } from "./types";
+import { ConfigInfo, Rules } from "./types";
 import pico from "picocolors";
 import { exec as actualExec } from "node:child_process";
 import { promisify } from "node:util";
 
 const exec = promisify(actualExec);
-
-type Rules = {
-  [rule: string]: [
-    0 | 1 | 2 | "off" | "warn" | "error",
-    ...Array<Record<string, unknown>>,
-  ];
-};
 
 export const extractRules = async (configMeta: ConfigInfo) => {
   const configSearchResult = await cosmiconfig("eslint", {
@@ -22,38 +14,22 @@ export const extractRules = async (configMeta: ConfigInfo) => {
   }).search();
 
   const config = configSearchResult?.config;
-  const configPath = configSearchResult?.filepath;
 
-  let flatConfigFilesPatterns: string[] = [];
-  let overridePatterns: string[] = [];
+  let overridePatterns: string[] = configMeta.overridePatterns;
 
-  if (configMeta.isFlatConfig && configPath) {
-    flatConfigFilesPatterns = [
-      ...flatConfigFilesPatterns,
-      ...(await getFlatConfigFiles(configPath)),
-    ];
-  } else {
-    const configOverrides =
-      (config?.overrides as Array<{
-        files: string[];
-        rules: Record<string, unknown>;
-      }>) || [];
-    overridePatterns = [
-      ...overridePatterns,
-      ...configOverrides.map((override) => override.files).flat(),
-    ];
-  }
+  const configOverrides =
+    (config?.overrides as Array<{
+      files: string[];
+      rules: Record<string, unknown>;
+    }>) || [];
+  overridePatterns = [
+    ...overridePatterns,
+    ...configOverrides.map((override) => override.files).flat(),
+  ];
 
-  const ruleTestFilePaths: string[] = [];
+  const ruleTestFilePaths: string[] = [configMeta.targetSampleFilePath];
 
   for (const pattern of uniq(overridePatterns)) {
-    const files = await glob(pattern, {
-      ignore: "node_modules/**",
-    });
-    files.length > 0 && ruleTestFilePaths.push(files[0]);
-  }
-
-  for (const pattern of uniq(flatConfigFilesPatterns)) {
     const files = await glob(pattern, {
       ignore: "node_modules/**",
     });
@@ -64,12 +40,11 @@ export const extractRules = async (configMeta: ConfigInfo) => {
 
   const ruleSets: Array<{ path: string; rules: Rules }> = [];
 
-  for (const ruleTestFilePath of uniq([...ruleTestFilePaths, TEMP_FILE_PATH])) {
+  for (const ruleTestFilePath of uniq([...ruleTestFilePaths])) {
     console.log(`  - ${ruleTestFilePath}`);
     const { stdout: rulesStdout } = await exec(
       `ESLINT_USE_FLAT_CONFIG=${configMeta.isFlatConfig} npx eslint --print-config ${ruleTestFilePath} --config ${configMeta.configPath}`,
     );
-
     if (rulesStdout.startsWith("undefined")) {
       console.error(
         pico.red("🚨 ESLint has not been applied to this file in config"),
@@ -79,21 +54,28 @@ export const extractRules = async (configMeta: ConfigInfo) => {
     }
     ruleSets.push({
       path: ruleTestFilePath,
-      rules: JSON.parse(rulesStdout).rules,
+      rules: normalizeRules(JSON.parse(rulesStdout).rules),
     });
   }
-
   return ruleSets;
 };
-type FlatConfig = Array<{
-  files?: string[];
-  rules: Record<string, unknown>;
-}>;
-const getFlatConfigFiles = async (configPath: string) => {
-  const configModule = await import(configPath);
-  const configObject = (await configModule.default) as FlatConfig;
-  return configObject
-    .map((config) => config.files)
-    .filter((files) => !!files)
-    .flat() as string[];
+
+const normalizeRules = (rules: Rules): Rules => {
+  // eslint-disable-next-line node/no-unsupported-features/es-builtins
+  return Object.fromEntries(
+    Object.entries(rules).map(([ruleName, value]) => {
+      return [ruleName, [mapSeverities(value[0]), ...value.slice(1)]];
+    }),
+  ) as Rules;
+};
+
+const mapSeverities = (value: string | number): 0 | 1 | 2 => {
+  if (typeof value === "number") {
+    return value as 0 | 1 | 2;
+  } else if (value === "off") {
+    return 0;
+  } else if (value === "warn") {
+    return 1;
+  }
+  return 2;
 };

@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import pico from "picocolors";
+import { errors } from "./errors";
 
 type GetTargetFilePathsArgs = {
   configPath: string;
@@ -45,6 +46,7 @@ export const getTargetFilePaths = async ({
       outputs = `${outputs}${data.toString()}`;
     });
     grep.stderr.on("data", (data) => {
+      errors.setGetTargetFilesFailed(data.toString());
       reject([]);
     });
     grep.stdout.on("close", () => {

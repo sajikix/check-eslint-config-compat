@@ -32,13 +32,6 @@ export const generateOldConfigCompatData = async ({
     ? `${targetDir}**/*.{${supportExtensions.join(",")}}`
     : targetDir;
   try {
-    const targetFiles = await glob([targetPattern], {
-      ignore: "node_modules/**",
-    });
-    if (targetFiles.length === 0) {
-      console.error(pico.red("🚨 No target files found"));
-      return;
-    }
     console.log("🔍 Check ESLint config compatibility...");
     console.log("============================");
     console.log(pico.blue("Step1. Check each configs are valid."));
@@ -54,9 +47,15 @@ export const generateOldConfigCompatData = async ({
     });
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
+    const targetFiles = await glob([targetPattern], {
+      ignore: "node_modules/**",
+    });
+    if (targetFiles.length === 0) {
+      console.error(pico.red("🚨 No target files found"));
+      return;
+    }
     const ruleSets = await extractRules({
       configPath: configPath,
-      isFlatConfig: false,
       targetSampleFilePath: targetFiles[0],
       overridePatterns,
     });

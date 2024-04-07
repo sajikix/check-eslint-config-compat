@@ -45,10 +45,7 @@ program
   .command("compare")
   .option("-c, --config <string>", "Path for eslint config")
   .option("-i, --import-path <string>", "Path for extracted file")
-  .option(
-    "-e, --ext <string>",
-    "File extensions to apply lint. (like: 'js,ts,jsx,tsx')",
-  )
+  .option("-t, --target-dir <string>", "Target directory to lint")
   .action((options) => {
     if (!options.config) {
       console.error("Config path is required.");
@@ -57,6 +54,7 @@ program
     compareWithCompatInfo({
       configPath: options.config,
       compatFilePath: options.importPath,
+      targetDir: options.targetDir,
     });
   });
 

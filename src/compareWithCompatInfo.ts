@@ -1,13 +1,13 @@
-import pico from "picocolors";
-import { TEMP_FILE_PATH, getTempFilePath } from "./utils";
-import { validateConfig } from "./validateConfig";
-import { writeFile, unlink, readdir, lstat, readFile } from "node:fs/promises";
-import { extractRules } from "./extractRules";
-import { getTargetFilePaths } from "./getTargetFilePaths";
 import { glob } from "glob";
-import { _compareTargetFilePaths } from "./compareTarget";
+import { lstat, readFile, unlink, writeFile } from "node:fs/promises";
+import pico from "picocolors";
+import { compareRules } from "./compareRules";
+import { compareTargetFilePaths } from "./compareTarget";
+import { errors } from "./errors";
+import { getTargetFilePaths } from "./getTargetFilePaths";
 import { CompatInfo } from "./types";
-import { compareRulesWithCompatData } from "./compareRulesWithCompatData";
+import { getTempFilePath } from "./utils";
+import { validateConfig } from "./validateConfig";
 
 type Options = {
   configPath: string;
@@ -19,8 +19,8 @@ type Options = {
 
 export const compareWithCompatInfo = async ({
   configPath,
-  compatFilePath = "./compat.json",
-  targetDir = "./src/",
+  compatFilePath = "./.compat.json",
+  targetDir = "./",
 }: Options) => {
   const compatFileJson = await readFile(compatFilePath, "utf-8");
   const compatInfo = JSON.parse(compatFileJson) as CompatInfo;
@@ -43,11 +43,15 @@ export const compareWithCompatInfo = async ({
       console.error(pico.red("🚨 No target files found"));
       return;
     }
+
     console.log("🔍 Check ESLint config compatibility...");
+
     console.log("============================");
     console.log(pico.blue("Step1. Check config is valid."));
     await validateConfig(configPath, true, testFilePath);
     await unlink(testFilePath);
+    errors.invalidConfig && errors.reportInvalidConfig();
+
     console.log("============================");
     console.log(pico.blue("Step2. compare lint targets."));
     const targets = await getTargetFilePaths({
@@ -56,11 +60,16 @@ export const compareWithCompatInfo = async ({
       extensions: supportExtensions,
       targetDir: targetDir,
     });
-    _compareTargetFilePaths(compatInfo.targets, targets);
+    errors.getTargetFilesFailed && errors.reportGetTargetFilesFailed();
+    compareTargetFilePaths(compatInfo.targets, targets);
+    errors.differentTargetFiles && errors.reportDifferentTargetFiles();
+
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
+    await compareRules(configPath, compatInfo.ruleSets);
 
-    compareRulesWithCompatData(configPath, compatInfo.ruleSets);
+    errors.reportDifferentRules();
+
     console.log(pico.green("🎉 successfully checked"));
   } catch (e) {
     console.error(pico.red("Check failed...."));

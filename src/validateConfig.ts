@@ -1,5 +1,6 @@
 import { exec } from "node:child_process";
 import pico from "picocolors";
+import { errors } from "./errors";
 
 export const validateConfig = async (
   configPath: string,
@@ -17,22 +18,27 @@ export const validateConfig = async (
       `ESLINT_USE_FLAT_CONFIG=${isFlatConfig} eslint ${targetFilePath} --config ${configPath}`,
       (err, stdout, stderr) => {
         if (err) {
-          console.error(pico.red(`🚨 node exec error : ${err}`));
-          throw new Error();
+          // console.error(pico.red(`🚨 node exec error : ${err}`));
+          errors.setInvalidConfig([`🚨 node exec error : ${err}`]);
         }
         if (stderr !== "") {
           const errorMessages = stderr
             ?.split("\n")
             .filter((line) => line !== "") as string[];
-          console.error(
-            pico.red(
-              "🚨 ESLint config is invalid. Detailed errors are as follows.",
-            ),
-          );
-          errorMessages.forEach((message) => {
-            console.error(pico.red(`  ${message}`));
-          });
-          throw new Error();
+
+          errors.setInvalidConfig([
+            "🚨 ESLint config is invalid. Detailed errors are as follows.",
+            ...errorMessages.map((message) => `  ${message}`),
+          ]);
+          // console.error(
+          //   pico.red(
+          //     "🚨 ESLint config is invalid. Detailed errors are as follows.",
+          //   ),
+          // );
+          // errorMessages.forEach((message) => {
+          //   console.error(pico.red(`  ${message}`));
+          // });
+          // throw new Error();
         }
         console.log(pico.green("✅ This config is valid."));
         resolve();

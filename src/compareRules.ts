@@ -5,32 +5,25 @@ import { promisify } from "node:util";
 import pico from "picocolors";
 import { RuleSet } from "./types";
 
+// @ts-ignore
+import { FlatESLint } from "eslint/use-at-your-own-risk";
+import { errors } from "./errors";
+
 const exec = promisify(actualExec);
 
 // eslint-disable-next-line max-statements
-export const compareRulesWithCompatData = async (
+export const compareRules = async (
   configPath: string,
   compatInfoRuleSets: RuleSet[],
 ) => {
   console.log("Check difference of rules in following paths.");
+  const eslint = new FlatESLint({ overrideConfigFile: configPath });
 
   for (const ruleSet of compatInfoRuleSets) {
     console.log(`  - ${ruleSet.path}`);
-    const { stdout: newRulesStdout } = await exec(
-      `ESLINT_USE_FLAT_CONFIG=true npx eslint --print-config ${ruleSet.path} --config ${configPath}`,
-    );
-
-    if (newRulesStdout.startsWith("undefined")) {
-      console.error(
-        pico.red("🚨 ESLint has not been applied to this file in new config"),
-      );
-      console.error(pico.red(`  - ${ruleSet.path}`));
-      throw new Error();
-    }
-    const newRules = JSON.parse(newRulesStdout).rules;
-
-    if (!isSameRules(ruleSet.rules, newRules)) {
-      throw new Error();
+    const calculated = await eslint.calculateConfigForFile(ruleSet.path);
+    if (!isSameRules(ruleSet.path, ruleSet.rules, calculated.rules)) {
+      return;
     }
   }
   console.log(pico.green("✅ No difference in lint rules"));
@@ -71,48 +64,39 @@ type Rules = {
   ];
 };
 
-const isSameRules = (oldRules: Rules, newRules: Rules) => {
+const isSameRules = (filePath: string, oldRules: Rules, newRules: Rules) => {
   const oldRuleKeys = Object.keys(oldRules);
   const newRuleKeys = Object.keys(newRules);
 
   const decrements = arrayDiff(oldRuleKeys, newRuleKeys);
   const increments = arrayDiff(newRuleKeys, oldRuleKeys);
   if (increments.length + decrements.length > 0) {
-    console.error(pico.red("🚨 There are differences in lint rules"));
-    console.error(pico.red(`  - Adapted ruleset is different`));
-    if (increments.length > 0) {
-      console.error(pico.red("  - following rules are increased."));
-      console.error([
-        ...increments.slice(0, 10),
-        increments.length > 10 && `...and ${increments.length - 10} more rules`,
-      ]);
-    }
-    if (decrements.length > 0) {
-      console.error(pico.red("  - following rules are reduced."));
-      console.error([
-        ...decrements.slice(0, 10),
-        decrements.length > 10 && `...and ${decrements.length - 10} more rules`,
-      ]);
-    }
+    errors.setRulesIncreaseDecrease(
+      filePath,
+      decrements.length > 0 ? decrements : undefined,
+      increments.length > 0 ? increments : undefined,
+    );
     return false;
   }
   for (const key of oldRuleKeys) {
     if (oldRules[key].length > 0 && newRules[key].length > 0) {
       if (!isSameSeverities(oldRules[key][0], newRules[key][0])) {
-        console.error(pico.red("🚨 There is a difference in lint rules"));
-        console.error(pico.red(`  - Severity for "${key}" rule is different.`));
-        console.error(
-          pico.red(
-            `  - value in old config is "${oldRules[key][0]}", but in new config it is "${newRules[key][0]}".`,
-          ),
+        errors.setRulesDifferentSeverities(
+          filePath,
+          key,
+          oldRules[key][0],
+          newRules[key][0],
         );
         return false;
       }
       for (let i = 1; i < oldRules[key].length; i++) {
         if (!isEqual(oldRules[key][i], newRules[key][i])) {
-          console.error(pico.red("🚨 There is a difference in lint rules"));
-          console.error(
-            pico.red(`  - ${oldRules[key]} rule options are different.`),
+          errors.setRulesDifferentOptions(
+            filePath,
+            key,
+            // @ts-ignore
+            oldRules[key][i],
+            newRules[key][i],
           );
           return false;
         }

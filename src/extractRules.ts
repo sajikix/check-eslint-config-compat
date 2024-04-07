@@ -2,21 +2,19 @@ import { cosmiconfig } from "cosmiconfig";
 import { glob } from "glob";
 import { uniq } from "lodash";
 import { ConfigInfo, Rules } from "./types";
-import pico from "picocolors";
-import { exec as actualExec } from "node:child_process";
-import { promisify } from "node:util";
 
-const exec = promisify(actualExec);
+import { ESLint } from "eslint";
 
-export const extractRules = async (configMeta: ConfigInfo) => {
+export const extractRules = async ({
+  configPath,
+  overridePatterns,
+  targetSampleFilePath,
+}: ConfigInfo) => {
   const configSearchResult = await cosmiconfig("eslint", {
-    searchPlaces: [configMeta.configPath],
+    searchPlaces: [configPath],
   }).search();
 
   const config = configSearchResult?.config;
-
-  let overridePatterns: string[] = configMeta.overridePatterns;
-
   const configOverrides =
     (config?.overrides as Array<{
       files: string[];
@@ -26,8 +24,8 @@ export const extractRules = async (configMeta: ConfigInfo) => {
     ...overridePatterns,
     ...configOverrides.map((override) => override.files).flat(),
   ];
-
-  const ruleTestFilePaths: string[] = [configMeta.targetSampleFilePath];
+  const ruleTestFilePaths: string[] = [targetSampleFilePath];
+  const eslint = new ESLint({ overrideConfigFile: configPath });
 
   for (const pattern of uniq(overridePatterns)) {
     const files = await glob(pattern, {
@@ -37,24 +35,15 @@ export const extractRules = async (configMeta: ConfigInfo) => {
   }
 
   console.log("Check difference of rules in following paths.");
-
   const ruleSets: Array<{ path: string; rules: Rules }> = [];
-
   for (const ruleTestFilePath of uniq([...ruleTestFilePaths])) {
     console.log(`  - ${ruleTestFilePath}`);
-    const { stdout: rulesStdout } = await exec(
-      `ESLINT_USE_FLAT_CONFIG=${configMeta.isFlatConfig} npx eslint --print-config ${ruleTestFilePath} --config ${configMeta.configPath}`,
-    );
-    if (rulesStdout.startsWith("undefined")) {
-      console.error(
-        pico.red("🚨 ESLint has not been applied to this file in config"),
-      );
-      console.error(pico.red(`  - ${ruleTestFilePath}`));
-      throw new Error();
-    }
+
+    const calculated =
+      await eslint.calculateConfigForFile(targetSampleFilePath);
     ruleSets.push({
       path: ruleTestFilePath,
-      rules: normalizeRules(JSON.parse(rulesStdout).rules),
+      rules: normalizeRules(calculated.rules),
     });
   }
   return ruleSets;

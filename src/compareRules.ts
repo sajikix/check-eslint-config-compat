@@ -16,14 +16,16 @@ export const compareRules = async (
   console.log("Check difference of rules in following paths.");
   const eslint = new FlatESLint({ overrideConfigFile: configPath });
 
+  let hasNoDiffs = true;
+
   for (const [path, rules] of Object.entries(compatInfoRuleSets)) {
     console.log(`  - ${path}`);
     const calculated = await eslint.calculateConfigForFile(path);
-    if (!isSameRules(path, rules, calculated.rules)) {
-      return;
-    }
+    // console.log(calculated.rules, rules);
+
+    checkSameRules(path, rules, calculated.rules) && (hasNoDiffs = false);
   }
-  console.log(pico.green("✅ No difference in lint rules"));
+  hasNoDiffs && console.log(pico.green("✅ No difference in lint rules"));
 };
 
 type Rules = {
@@ -33,33 +35,36 @@ type Rules = {
   ];
 };
 
-const isSameRules = (filePath: string, oldRules: Rules, newRules: Rules) => {
+const checkSameRules = (filePath: string, oldRules: Rules, newRules: Rules) => {
+  let hasNoDiff = true;
   const oldRuleKeys = Object.keys(oldRules);
   const newRuleKeys = Object.keys(newRules);
 
   const decrements = arrayDiff(oldRuleKeys, newRuleKeys);
   const increments = arrayDiff(newRuleKeys, oldRuleKeys);
   if (increments.length + decrements.length > 0) {
+    hasNoDiff = false;
     errors.setRulesIncreaseDecrease(
       filePath,
       decrements.length > 0 ? decrements : undefined,
       increments.length > 0 ? increments : undefined,
     );
-    return false;
   }
+
   for (const key of oldRuleKeys) {
-    if (oldRules[key].length > 0 && newRules[key].length > 0) {
+    if (oldRules[key].length > 0 && newRules[key] && newRules[key].length > 0) {
       if (!isSameSeverities(oldRules[key][0], newRules[key][0])) {
+        hasNoDiff = false;
         errors.setRulesDifferentSeverities(
           filePath,
           key,
           oldRules[key][0],
           newRules[key][0],
         );
-        return false;
       }
       for (let i = 1; i < oldRules[key].length; i++) {
         if (!isEqual(oldRules[key][i], newRules[key][i])) {
+          hasNoDiff = false;
           errors.setRulesDifferentOptions(
             filePath,
             key,
@@ -67,10 +72,10 @@ const isSameRules = (filePath: string, oldRules: Rules, newRules: Rules) => {
             oldRules[key][i],
             newRules[key][i],
           );
-          return false;
         }
       }
     }
   }
-  return true;
+
+  return hasNoDiff;
 };

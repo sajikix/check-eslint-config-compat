@@ -160,10 +160,11 @@ export class Errors {
     if (Object.keys(this.differentRules).length > 0) {
       console.error(pico.red("🚨 There are differences in lint rules"));
       Object.values(this.differentRules).forEach((diff) => {
-        console.error(pico.red(`  - path : ${diff.filePath}`));
+        console.error(`--------------------------------------------`);
+        console.error(`path : ${diff.filePath}`);
         diff.increased &&
           console.error(
-            pico.red("  - following rules are increased."),
+            pico.red("- following rules are increased."),
             [
               ...diff.increased.slice(0, 10),
               diff.increased.length > 10
@@ -174,7 +175,7 @@ export class Errors {
 
         diff.decreased &&
           console.error(
-            pico.red("  - following rules are reduced."),
+            pico.red("- following rules are reduced."),
             [
               ...diff.decreased.slice(0, 10),
               diff.decreased.length > 10
@@ -182,22 +183,37 @@ export class Errors {
                 : undefined,
             ].filter(Boolean),
           );
-        diff.differentSeverities &&
+
+        if (diff.differentSeverities) {
           console.error(
-            pico.red("  - following rules have different severities."),
-            diff.differentSeverities.map(
-              (_diff) =>
-                `    - ${_diff.key} : ${_diff.oldSeverity} -> ${_diff.newSeverity}`,
+            pico.red("- following rules have different severities."),
+          );
+          console.error(
+            pico.red(
+              diff.differentSeverities
+                .map(
+                  (_diff) =>
+                    `  - ${_diff.key} : ${_diff.oldSeverity} -> ${_diff.newSeverity}`,
+                )
+                .join("\n"),
             ),
           );
-        diff.differentRuleOptions &&
+        }
+        if (diff.differentRuleOptions) {
+          console.error(pico.red("- following rules have different options."));
           console.error(
-            pico.red("  - following rules have different options."),
-            diff.differentRuleOptions.map(
-              (_diff) =>
-                `    - ${_diff.key} : ${_diff.oldOption} -> ${_diff.newOption}`,
+            pico.red(
+              diff.differentRuleOptions
+                .map(
+                  (_diff) =>
+                    `  - ${_diff.key} : ${JSON.stringify(
+                      _diff.oldOption,
+                    )} -> ${JSON.stringify(_diff.newOption)}`,
+                )
+                .join("\n"),
             ),
           );
+        }
       });
     }
   }

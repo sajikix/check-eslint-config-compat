@@ -45,6 +45,7 @@ program
   .option("-c, --config <string>", "Path for eslint config")
   .option("-i, --import-path <string>", "Path for extracted file")
   .option("-t, --target-dir <string>", "Target directory to lint")
+  .option("-r, --target-dir <string>", "Path to generate report file")
   .action((options) => {
     if (!options.config) {
       console.error("Config path is required.");

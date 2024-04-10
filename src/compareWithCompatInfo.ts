@@ -67,9 +67,10 @@ export const compareWithCompatInfo = async ({
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
     await compareRules(configPath, compatInfo.ruleSets);
-
     errors.reportDifferentRules();
 
+    console.log("============================");
+    console.log(pico.blue("Result"));
     errors.hasNoErrors()
       ? console.log(
           pico.green("🎉 Same rule is applied as before in all files."),

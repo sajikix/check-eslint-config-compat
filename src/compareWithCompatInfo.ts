@@ -20,7 +20,7 @@ type Options = {
 export const compareWithCompatInfo = async ({
   configPath,
   compatFilePath = "./.compat.json",
-  targetDir = "./",
+  targetDir = "./src",
 }: Options) => {
   const compatFileJson = await readFile(compatFilePath, "utf-8");
   const compatInfo = JSON.parse(compatFileJson) as CompatInfo;
@@ -50,7 +50,7 @@ export const compareWithCompatInfo = async ({
     console.log(pico.blue("Step1. Check config is valid."));
     await validateConfig(configPath, true, testFilePath);
     await unlink(testFilePath);
-    errors.invalidConfig && errors.reportInvalidConfig();
+    errors.reportInvalidConfig();
 
     console.log("============================");
     console.log(pico.blue("Step2. compare lint targets."));
@@ -60,9 +60,9 @@ export const compareWithCompatInfo = async ({
       extensions: supportExtensions,
       targetDir: targetDir,
     });
-    errors.getTargetFilesFailed && errors.reportGetTargetFilesFailed();
+    errors.reportGetTargetFilesFailed();
     compareTargetFilePaths(compatInfo.targets, targets);
-    errors.differentTargetFiles && errors.reportDifferentTargetFiles();
+    errors.reportDifferentTargetFiles();
 
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
@@ -70,8 +70,12 @@ export const compareWithCompatInfo = async ({
 
     errors.reportDifferentRules();
 
-    console.log(pico.green("🎉 successfully checked"));
+    errors.hasNoErrors()
+      ? console.log(
+          pico.green("🎉 Same rule is applied as before in all files."),
+        )
+      : console.log(pico.red("🚨 check failed"));
   } catch (e) {
-    console.error(pico.red("Check failed...."));
+    console.error(pico.red("Check failed...."), e);
   }
 };

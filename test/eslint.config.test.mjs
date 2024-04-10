@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 export default [
   ...tseslint.config(...tseslint.configs.recommended),
   {
-    files: ["**/*.js"],
+    files: ["**/*.js", "**/*.jsx"],
     rules: {
       semi: "error",
       "prefer-const": "error",

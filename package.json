@@ -29,6 +29,9 @@
     "url": "https://github.com/sajikix/check-eslint-config-compat/issues"
   },
   "homepage": "https://github.com/sajikix/check-eslint-config-compat#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@cybozu/eslint-config": "^22.0.2",
     "@eslint/eslintrc": "^3.0.2",

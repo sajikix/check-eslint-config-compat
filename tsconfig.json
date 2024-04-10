@@ -1,6 +1,7 @@
 {
   "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2023",
     "outDir": "dist",
     "declaration": true,
     "esModuleInterop": true,

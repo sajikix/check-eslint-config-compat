@@ -6,7 +6,7 @@ export type ConfigInfo = {
 
 export type CompatInfo = {
   targets: string[];
-  ruleSets: RuleSet[];
+  ruleSets: RuleSets;
   supportExtensions: string[];
 };
 
@@ -17,7 +17,6 @@ export type Rules = {
   ];
 };
 
-export type RuleSet = {
-  path: string;
-  rules: Rules;
+export type RuleSets = {
+  [filePath: string]: Rules;
 };

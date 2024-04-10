@@ -1,25 +1,22 @@
 import pico from "picocolors";
-import { DEFAULT_COMPAT_DATA_FILE_PATH, TEMP_FILE_PATH } from "./utils";
+import { DEFAULT_COMPAT_DATA_FILE_PATH } from "./utils";
 import { validateConfig } from "./validateConfig";
-import { writeFile, unlink, readdir, lstat } from "node:fs/promises";
+import { writeFile, unlink, lstat } from "node:fs/promises";
 import { extractRules } from "./extractRules";
 import { getTargetFilePaths } from "./getTargetFilePaths";
-import { glob } from "glob";
 
 type Options = {
   configPath: string;
   outputPath?: string;
   supportExtensions?: string[];
   targetDir?: string;
-  overridePatterns?: string[];
 };
 
 export const generateOldConfigCompatData = async ({
   supportExtensions = ["js"],
   configPath,
   outputPath = DEFAULT_COMPAT_DATA_FILE_PATH,
-  targetDir = "./",
-  overridePatterns = [],
+  targetDir = "./src",
 }: Options) => {
   console.log("supportExtensions", supportExtensions);
 
@@ -28,9 +25,6 @@ export const generateOldConfigCompatData = async ({
   const testFilePath = isDir ? `${targetDir}_temp.js` : "./_temp.js";
   await writeFile(testFilePath, "");
 
-  const targetPattern = isDir
-    ? `${targetDir}**/*.{${supportExtensions.join(",")}}`
-    : targetDir;
   try {
     console.log("🔍 Check ESLint config compatibility...");
     console.log("============================");
@@ -45,24 +39,22 @@ export const generateOldConfigCompatData = async ({
       extensions: supportExtensions,
       targetDir: targetDir,
     });
+
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
-    const targetFiles = await glob([targetPattern], {
-      ignore: "node_modules/**",
-    });
-    if (targetFiles.length === 0) {
-      console.error(pico.red("🚨 No target files found"));
-      return;
-    }
+
     const ruleSets = await extractRules({
       configPath: configPath,
-      targetSampleFilePath: targetFiles[0],
-      overridePatterns,
+      targetFilePaths: targets,
     });
     console.log("============================");
     await writeFile(
       outputPath,
-      JSON.stringify({ targets, ruleSets, supportExtensions }),
+      JSON.stringify({
+        targets,
+        ruleSets: Object.fromEntries(ruleSets),
+        supportExtensions,
+      }),
     );
     console.log(pico.green("🎉 rule settings art extracted!"));
   } catch (e) {

@@ -1,60 +1,29 @@
 import arrayDiff from "lodash/difference";
 import isEqual from "lodash/isEqual";
-import { exec as actualExec } from "node:child_process";
-import { promisify } from "node:util";
 import pico from "picocolors";
-import { RuleSet } from "./types";
+import { RuleSets } from "./types";
 
 // @ts-ignore
 import { FlatESLint } from "eslint/use-at-your-own-risk";
 import { errors } from "./errors";
-
-const exec = promisify(actualExec);
+import { isSameSeverities } from "./utils";
 
 // eslint-disable-next-line max-statements
 export const compareRules = async (
   configPath: string,
-  compatInfoRuleSets: RuleSet[],
+  compatInfoRuleSets: RuleSets,
 ) => {
   console.log("Check difference of rules in following paths.");
   const eslint = new FlatESLint({ overrideConfigFile: configPath });
 
-  for (const ruleSet of compatInfoRuleSets) {
-    console.log(`  - ${ruleSet.path}`);
-    const calculated = await eslint.calculateConfigForFile(ruleSet.path);
-    if (!isSameRules(ruleSet.path, ruleSet.rules, calculated.rules)) {
+  for (const [path, rules] of Object.entries(compatInfoRuleSets)) {
+    console.log(`  - ${path}`);
+    const calculated = await eslint.calculateConfigForFile(path);
+    if (!isSameRules(path, rules, calculated.rules)) {
       return;
     }
   }
   console.log(pico.green("✅ No difference in lint rules"));
-};
-
-const isSameSeverities = (
-  oldSeverities: 0 | 1 | 2 | "off" | "warn" | "error",
-  newSeverities: 0 | 1 | 2 | "off" | "warn" | "error",
-) => {
-  if (oldSeverities === newSeverities) {
-    return true;
-  }
-  if (
-    [0, "off"].includes(oldSeverities) &&
-    [0, "off"].includes(newSeverities)
-  ) {
-    return true;
-  }
-  if (
-    [1, "warn"].includes(oldSeverities) &&
-    [1, "warn"].includes(newSeverities)
-  ) {
-    return true;
-  }
-  if (
-    [2, "error"].includes(oldSeverities) &&
-    [2, "error"].includes(newSeverities)
-  ) {
-    return true;
-  }
-  return false;
 };
 
 type Rules = {

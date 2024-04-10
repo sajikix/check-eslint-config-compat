@@ -37,7 +37,6 @@ program
       configPath: options.config,
       outputPath: options.output,
       supportExtensions: options.ext.split(","),
-      overridePatterns: options.overrides && options.overrides.split(","),
     });
   });
 

@@ -1,7 +1,7 @@
 import pico from "picocolors";
 
 export class Errors {
-  invalidConfig: string[] | undefined;
+  invalidConfig: string[];
   getTargetFilesFailed: string | undefined;
   differentTargetFiles:
     | {
@@ -9,31 +9,29 @@ export class Errors {
         increased?: string[];
       }
     | undefined;
-  differentRules:
-    | {
-        [filePath: string]: {
-          filePath: string;
-          decreased?: string[];
-          increased?: string[];
-          differentSeverities?: Array<{
-            key: string;
-            oldSeverity: string | number;
-            newSeverity: string | number;
-          }>;
-          differentRuleOptions?: Array<{
-            key: string;
-            oldOption: Record<string, unknown>;
-            newOption: Record<string, unknown>;
-          }>;
-        };
-      }
-    | undefined;
+  differentRules: {
+    [filePath: string]: {
+      filePath: string;
+      decreased?: string[];
+      increased?: string[];
+      differentSeverities?: Array<{
+        key: string;
+        oldSeverity: string | number;
+        newSeverity: string | number;
+      }>;
+      differentRuleOptions?: Array<{
+        key: string;
+        oldOption: Record<string, unknown>;
+        newOption: Record<string, unknown>;
+      }>;
+    };
+  };
 
   constructor() {
-    this.invalidConfig = undefined;
+    this.invalidConfig = [];
     this.getTargetFilesFailed = undefined;
     this.differentTargetFiles = undefined;
-    this.differentRules = undefined;
+    this.differentRules = {};
   }
 
   setInvalidConfig(messages: string[]) {
@@ -53,8 +51,8 @@ export class Errors {
 
   setRulesIncreaseDecrease(
     filePath: string,
-    decreased: string[],
-    increased: string[],
+    decreased: string[] | undefined,
+    increased: string[] | undefined,
   ) {
     if (!this.differentRules) {
       this.differentRules = {};
@@ -84,7 +82,7 @@ export class Errors {
     newSeverity: string | number,
   ) {
     this.differentRules[filePath].differentSeverities
-      ? this.differentRules[filePath].differentSeverities.push({
+      ? this.differentRules[filePath].differentSeverities?.push({
           key,
           oldSeverity,
           newSeverity,
@@ -101,7 +99,7 @@ export class Errors {
     newOption: Record<string, unknown>,
   ) {
     this.differentRules[filePath].differentRuleOptions
-      ? this.differentRules[filePath].differentRuleOptions.push({
+      ? this.differentRules[filePath].differentRuleOptions?.push({
           key,
           oldOption,
           newOption,
@@ -112,88 +110,105 @@ export class Errors {
   }
 
   reportInvalidConfig() {
-    errors.invalidConfig.forEach((errorMes) => {
-      console.log(pico.red(errorMes));
-    });
-    process.exit(1);
+    if (errors.invalidConfig.length > 0) {
+      errors.invalidConfig.forEach((errorMes) => {
+        console.log(pico.red(errorMes));
+      });
+      process.exit(1);
+    }
   }
 
   reportGetTargetFilesFailed() {
-    console.error(pico.red("🚨 Get target files failed"));
-    console.error(pico.red(this.getTargetFilesFailed));
-    process.exit(1);
+    if (this.getTargetFilesFailed) {
+      console.error(pico.red("🚨 Get target files failed"));
+      console.error(pico.red(this.getTargetFilesFailed));
+      process.exit(1);
+    }
   }
 
   reportDifferentTargetFiles() {
-    console.error(pico.red("🚨 There is a difference in lint targets"));
-    this.differentTargetFiles.increased &&
-      console.error(
-        pico.red("following files are increased as lint targets..."),
-        [
-          ...this.differentTargetFiles.increased.slice(0, 10),
-          this.differentTargetFiles.increased.length > 10
-            ? `...and ${
-                this.differentTargetFiles.increased.length - 10
-              } more files`
-            : undefined,
-        ].filter(Boolean),
-      );
-    this.differentTargetFiles.decreased &&
-      console.error(
-        pico.red("following files are reduced as lint targets..."),
-        [
-          ...this.differentTargetFiles.decreased.slice(0, 10),
-          this.differentTargetFiles.decreased.length > 10
-            ? `...and ${
-                this.differentTargetFiles.decreased.length - 10
-              } more files`
-            : undefined,
-        ].filter(Boolean),
-      );
+    if (this.differentTargetFiles) {
+      console.error(pico.red("🚨 There is a difference in lint targets"));
+      this.differentTargetFiles.increased &&
+        console.error(
+          pico.red("following files are increased as lint targets..."),
+          [
+            ...this.differentTargetFiles.increased.slice(0, 10),
+            this.differentTargetFiles.increased.length > 10
+              ? `...and ${
+                  this.differentTargetFiles.increased.length - 10
+                } more files`
+              : undefined,
+          ].filter(Boolean),
+        );
+      this.differentTargetFiles.decreased &&
+        console.error(
+          pico.red("following files are reduced as lint targets..."),
+          [
+            ...this.differentTargetFiles.decreased.slice(0, 10),
+            this.differentTargetFiles.decreased.length > 10
+              ? `...and ${
+                  this.differentTargetFiles.decreased.length - 10
+                } more files`
+              : undefined,
+          ].filter(Boolean),
+        );
+    }
   }
 
   reportDifferentRules() {
-    console.error(pico.red("🚨 There are differences in lint rules"));
-    Object.values(this.differentRules).forEach((diff) => {
-      console.error(pico.red(`  - ${diff.filePath}`));
-      diff.increased &&
-        console.error(
-          pico.red("  - following rules are increased."),
-          [
-            ...diff.increased.slice(0, 10),
-            diff.increased.length > 10
-              ? `...and ${diff.increased.length - 10} more rules`
-              : undefined,
-          ].filter(Boolean),
-        );
+    if (Object.keys(this.differentRules).length > 0) {
+      console.error(pico.red("🚨 There are differences in lint rules"));
+      Object.values(this.differentRules).forEach((diff) => {
+        console.error(pico.red(`  - path : ${diff.filePath}`));
+        diff.increased &&
+          console.error(
+            pico.red("  - following rules are increased."),
+            [
+              ...diff.increased.slice(0, 10),
+              diff.increased.length > 10
+                ? `...and ${diff.increased.length - 10} more rules`
+                : undefined,
+            ].filter(Boolean),
+          );
 
-      diff.decreased &&
-        console.error(
-          pico.red("  - following rules are reduced."),
-          [
-            ...diff.decreased.slice(0, 10),
-            diff.decreased.length > 10
-              ? `...and ${diff.decreased.length - 10} more rules`
-              : undefined,
-          ].filter(Boolean),
-        );
-      diff.differentSeverities &&
-        console.error(
-          pico.red("  - following rules have different severities."),
-          diff.differentSeverities.map(
-            (_diff) =>
-              `    - ${_diff.key} : ${_diff.oldSeverity} -> ${_diff.newSeverity}`,
-          ),
-        );
-      diff.differentRuleOptions &&
-        console.error(
-          pico.red("  - following rules have different options."),
-          diff.differentRuleOptions.map(
-            (_diff) =>
-              `    - ${_diff.key} : ${_diff.oldOption} -> ${_diff.newOption}`,
-          ),
-        );
-    });
+        diff.decreased &&
+          console.error(
+            pico.red("  - following rules are reduced."),
+            [
+              ...diff.decreased.slice(0, 10),
+              diff.decreased.length > 10
+                ? `...and ${diff.decreased.length - 10} more rules`
+                : undefined,
+            ].filter(Boolean),
+          );
+        diff.differentSeverities &&
+          console.error(
+            pico.red("  - following rules have different severities."),
+            diff.differentSeverities.map(
+              (_diff) =>
+                `    - ${_diff.key} : ${_diff.oldSeverity} -> ${_diff.newSeverity}`,
+            ),
+          );
+        diff.differentRuleOptions &&
+          console.error(
+            pico.red("  - following rules have different options."),
+            diff.differentRuleOptions.map(
+              (_diff) =>
+                `    - ${_diff.key} : ${_diff.oldOption} -> ${_diff.newOption}`,
+            ),
+          );
+      });
+    }
+  }
+
+  hasNoErrors() {
+    return (
+      this.invalidConfig.length === 0 &&
+      !this.getTargetFilesFailed &&
+      !this.differentTargetFiles &&
+      Object.keys(this.differentRules).length === 0
+    );
   }
 }
 

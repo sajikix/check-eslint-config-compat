@@ -21,7 +21,7 @@ export const compareRules = async (
   for (const [path, rules] of Object.entries(compatInfoRuleSets)) {
     console.log(`  - ${path}`);
     const calculated = await eslint.calculateConfigForFile(path);
-    // console.log(calculated.rules, rules);
+    console.log(JSON.stringify(calculated));
 
     checkSameRules(path, rules, calculated.rules) && (hasNoDiffs = false);
   }

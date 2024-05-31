@@ -27,10 +27,12 @@ export const generateOldConfigCompatData = async ({
 
   try {
     console.log("🔍 Check ESLint config compatibility...");
+
     console.log("============================");
     console.log(pico.blue("Step1. Check each configs are valid."));
     await validateConfig(configPath, false, testFilePath);
     await unlink(testFilePath);
+
     console.log("============================");
     console.log(pico.blue("Step2. Get lint targets."));
     const targets = await getTargetFilePaths({
@@ -47,6 +49,7 @@ export const generateOldConfigCompatData = async ({
       configPath: configPath,
       targetFilePaths: targets,
     });
+
     console.log("============================");
     await writeFile(
       outputPath,
@@ -58,6 +61,6 @@ export const generateOldConfigCompatData = async ({
     );
     console.log(pico.green("🎉 rule settings art extracted!"));
   } catch (e) {
-    console.error(pico.red("Check failed...."));
+    console.error(pico.red("Check failed...."), e);
   }
 };

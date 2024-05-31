@@ -1,5 +1,5 @@
 import path from "node:path";
-import { Rules } from "./types";
+import { LanguageOptions, Rules } from "./types";
 import arrayDiff from "lodash/difference";
 import isEqual from "lodash/isEqual";
 
@@ -78,5 +78,47 @@ export const isSameRules = (oldRules: Rules, newRules: Rules) => {
       }
     }
   }
+  return true;
+};
+
+export const isSameLanguageOptions = (
+  oldOptions: LanguageOptions,
+  newOptions: LanguageOptions,
+) => {
+  // check ecmaVersion is same
+  if (oldOptions?.ecmaVersion !== newOptions?.ecmaVersion) {
+    return false;
+  }
+  // check sourceType is same
+  if (oldOptions?.sourceType !== newOptions?.sourceType) {
+    return false;
+  }
+  // check globals is same
+  if (oldOptions?.globals === undefined && newOptions?.globals !== undefined) {
+    return false;
+  }
+  if (newOptions?.globals === undefined && oldOptions?.globals !== undefined) {
+    return false;
+  }
+
+  if (!!oldOptions?.globals && !!newOptions?.globals) {
+    const oldGlobalKeys = Object.keys(oldOptions.globals);
+    const newGlobalKeys = Object.keys(newOptions.globals);
+    const decrements = arrayDiff(oldGlobalKeys, newGlobalKeys);
+    const increments = arrayDiff(newGlobalKeys, oldGlobalKeys);
+    if (increments.length + decrements.length > 0) {
+      return false;
+    }
+    for (const key of oldGlobalKeys) {
+      if (oldOptions.globals[key] !== newOptions.globals[key]) {
+        return false;
+      }
+    }
+  }
+  // check parserOptions is same
+  if (!isEqual(oldOptions?.parserOptions, newOptions?.parserOptions)) {
+    return false;
+  }
+  // all options are same
   return true;
 };

@@ -1,8 +1,8 @@
 import { cosmiconfig } from "cosmiconfig";
-import { Rules } from "./types";
+import { Config, Rules } from "./types";
 
 import { ESLint } from "eslint";
-import { isSameRules, normalizeRules } from "./utils";
+import { isSameLanguageOptions, isSameRules, normalizeRules } from "./utils";
 
 export const extractRules = async ({
   configPath,
@@ -15,20 +15,48 @@ export const extractRules = async ({
     searchPlaces: [configPath],
   }).search();
   const config = configSearchResult?.config;
-  const ruleSettings = new Map<string, Rules>();
+  const ruleSettings = new Map<string, Config>();
   const eslint = new ESLint({ overrideConfig: config });
   for (const targetFilePath of targetFilePaths) {
     const calculated = await eslint.calculateConfigForFile(targetFilePath);
+
     if ([...ruleSettings.keys()].length === 0) {
-      ruleSettings.set(targetFilePath, normalizeRules(calculated.rules));
+      console.log("calculated", calculated);
+
+      console.log({
+        ecmaVersion: calculated.parserOptions?.ecmaVersion,
+        sourceType: calculated.parserOptions?.sourceType,
+        globals: calculated.globals,
+        parserOptions: calculated.parserOptions,
+      });
+
+      ruleSettings.set(targetFilePath, {
+        rules: normalizeRules(calculated.rules),
+        languageOptions: {
+          ecmaVersion: calculated.parserOptions?.ecmaVersion,
+          sourceType: calculated.parserOptions?.sourceType,
+          globals: calculated.globals,
+          parserOptions: calculated.parserOptions,
+        },
+        settings: calculated?.settings,
+      });
     } else {
       const hasSameRuleSettings = [...ruleSettings.values()].some(
-        (ruleSetting) => {
-          return isSameRules(ruleSetting, calculated.rules);
+        (ruleConfig) => {
+          return (
+            isSameRules(ruleConfig.rules, calculated.rules) &&
+            isSameLanguageOptions(
+              ruleConfig.languageOptions,
+              calculated.languageOptions,
+            )
+          );
         },
       );
       if (!hasSameRuleSettings) {
-        ruleSettings.set(targetFilePath, normalizeRules(calculated.rules));
+        ruleSettings.set(targetFilePath, {
+          rules: normalizeRules(calculated.rules),
+          languageOptions: calculated.languageOptions,
+        });
       }
     }
   }

@@ -1,4 +1,27 @@
 import pico from "picocolors";
+import { LanguageOptions } from "./types";
+
+type LanguageOptionsDiff =
+  | {
+      type: "ecmaVersion";
+      newOption: LanguageOptions["ecmaVersion"];
+      oldOption: LanguageOptions["ecmaVersion"];
+    }
+  | {
+      type: "globals";
+      newOption: LanguageOptions["globals"];
+      oldOption: LanguageOptions["globals"];
+    }
+  | {
+      type: "sourceType";
+      newOption: LanguageOptions["sourceType"];
+      oldOption: LanguageOptions["sourceType"];
+    }
+  | {
+      type: "parserOptions";
+      newOption: LanguageOptions["parserOptions"];
+      oldOption: LanguageOptions["parserOptions"];
+    };
 
 export class Errors {
   invalidConfig: string[];
@@ -24,6 +47,7 @@ export class Errors {
         oldOption: Record<string, unknown>;
         newOption: Record<string, unknown>;
       }>;
+      differentLanguageOptions?: LanguageOptionsDiff[];
     };
   };
 
@@ -106,6 +130,19 @@ export class Errors {
         })
       : (this.differentRules[filePath].differentRuleOptions = [
           { key, oldOption, newOption },
+        ]);
+  }
+
+  setDifferentLanguageOptions(
+    filePath: string,
+    languageOptionsDiff: LanguageOptionsDiff,
+  ) {
+    this.differentRules[filePath].differentLanguageOptions
+      ? this.differentRules[filePath].differentLanguageOptions?.push(
+          languageOptionsDiff,
+        )
+      : (this.differentRules[filePath].differentLanguageOptions = [
+          languageOptionsDiff,
         ]);
   }
 
@@ -214,6 +251,23 @@ export class Errors {
             ),
           );
         }
+        if (diff.differentLanguageOptions) {
+          console.error(
+            pico.red("- following language options are different."),
+          );
+          console.error(
+            pico.red(
+              diff.differentLanguageOptions
+                .map(
+                  (_diff) =>
+                    `  - ${_diff.type} : ${truncateJson(
+                      JSON.stringify(_diff.oldOption),
+                    )} -> ${truncateJson(JSON.stringify(_diff.newOption))}`,
+                )
+                .join("\n"),
+            ),
+          );
+        }
       });
     }
   }
@@ -229,3 +283,10 @@ export class Errors {
 }
 
 export const errors = new Errors();
+
+const truncateJson = (json: string | undefined) => {
+  if (json && json.length > 100) {
+    return `${json.slice(0, 100)} ... }`;
+  }
+  return json;
+};

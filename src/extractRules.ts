@@ -1,5 +1,6 @@
 import { cosmiconfig } from "cosmiconfig";
-import { Config, Rules } from "./types";
+import { FilesConfig, Rules } from "./types";
+import omit from "lodash/omit";
 
 import { ESLint } from "eslint";
 import { isSameLanguageOptions, isSameRules, normalizeRules } from "./utils";
@@ -15,49 +16,47 @@ export const extractRules = async ({
     searchPlaces: [configPath],
   }).search();
   const config = configSearchResult?.config;
-  const ruleSettings = new Map<string, Config>();
+  let ruleSettings = new Array<FilesConfig>();
+
   const eslint = new ESLint({ overrideConfig: config });
   for (const targetFilePath of targetFilePaths) {
     const calculated = await eslint.calculateConfigForFile(targetFilePath);
-
-    if ([...ruleSettings.keys()].length === 0) {
-      console.log("calculated", calculated);
-
-      console.log({
+    const sameConfigIndex = ruleSettings.findIndex((ruleConfig) => {
+      const newLanguageOptions = {
         ecmaVersion: calculated.parserOptions?.ecmaVersion,
         sourceType: calculated.parserOptions?.sourceType,
         globals: calculated.globals,
         parserOptions: calculated.parserOptions,
-      });
+      };
 
-      ruleSettings.set(targetFilePath, {
-        rules: normalizeRules(calculated.rules),
-        languageOptions: {
-          ecmaVersion: calculated.parserOptions?.ecmaVersion,
-          sourceType: calculated.parserOptions?.sourceType,
-          globals: calculated.globals,
-          parserOptions: calculated.parserOptions,
-        },
-        settings: calculated?.settings,
-      });
-    } else {
-      const hasSameRuleSettings = [...ruleSettings.values()].some(
-        (ruleConfig) => {
-          return (
-            isSameRules(ruleConfig.rules, calculated.rules) &&
-            isSameLanguageOptions(
-              ruleConfig.languageOptions,
-              calculated.languageOptions,
-            )
-          );
-        },
+      return (
+        isSameRules(ruleConfig.rules, calculated.rules) &&
+        isSameLanguageOptions(ruleConfig.languageOptions, newLanguageOptions)
       );
-      if (!hasSameRuleSettings) {
-        ruleSettings.set(targetFilePath, {
+    });
+
+    if (ruleSettings.length !== 0 && sameConfigIndex >= 0) {
+      ruleSettings[sameConfigIndex].targetFilePaths.push(targetFilePath);
+    } else {
+      ruleSettings = [
+        ...ruleSettings,
+        {
+          key: targetFilePath,
+          targetFilePaths: [targetFilePath],
           rules: normalizeRules(calculated.rules),
-          languageOptions: calculated.languageOptions,
-        });
-      }
+          languageOptions: {
+            ecmaVersion: calculated.parserOptions?.ecmaVersion,
+            sourceType: calculated.parserOptions?.sourceType,
+            globals: calculated.globals,
+            parserOptions: omit(calculated.parserOptions, [
+              "ecmaVersion",
+              "sourceType",
+            ]),
+          },
+          settings: calculated?.settings,
+          env: calculated?.env,
+        },
+      ];
     }
   }
   return ruleSettings;

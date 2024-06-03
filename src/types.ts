@@ -1,19 +1,16 @@
-export type ConfigInfo = {
-  configPath: string;
-  targetSampleFilePath: string;
-  overridePatterns: string[];
-};
-
 export type CompatInfo = {
   targets: string[];
-  ruleSets: RuleSets;
+  filesConfig: FilesConfig[];
   supportExtensions: string[];
 };
 
-export type Config = {
+export type FilesConfig = {
+  key: string;
+  targetFilePaths: string[];
   rules: Rules;
   languageOptions: LanguageOptions;
   settings?: Record<string, unknown>;
+  env?: Record<string, boolean>;
 };
 
 export type Rules = {
@@ -21,10 +18,6 @@ export type Rules = {
     0 | 1 | 2 | "off" | "warn" | "error",
     ...Array<Record<string, unknown>>,
   ];
-};
-
-export type RuleSets = {
-  [filePath: string]: Rules;
 };
 
 export type LanguageOptions = {

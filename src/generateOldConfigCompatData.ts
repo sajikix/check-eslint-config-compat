@@ -4,6 +4,7 @@ import { validateConfig } from "./validateConfig";
 import { writeFile, unlink, lstat } from "node:fs/promises";
 import { extractRules } from "./extractRules";
 import { getTargetFilePaths } from "./getTargetFilePaths";
+import { CompatInfo } from "./types";
 
 type Options = {
   configPath: string;
@@ -45,20 +46,19 @@ export const generateOldConfigCompatData = async ({
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
 
-    const ruleSets = await extractRules({
+    const filesConfig = await extractRules({
       configPath: configPath,
       targetFilePaths: targets,
     });
 
     console.log("============================");
-    await writeFile(
-      outputPath,
-      JSON.stringify({
-        targets,
-        ruleSets: Object.fromEntries(ruleSets),
-        supportExtensions,
-      }),
-    );
+
+    const compatData: CompatInfo = {
+      targets,
+      filesConfig,
+      supportExtensions,
+    };
+    await writeFile(outputPath, JSON.stringify(compatData));
     console.log(pico.green("🎉 rule settings art extracted!"));
   } catch (e) {
     console.error(pico.red("Check failed...."), e);

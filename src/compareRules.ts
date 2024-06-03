@@ -1,7 +1,9 @@
 import arrayDiff from "lodash/difference";
 import isEqual from "lodash/isEqual";
 import pico from "picocolors";
-import { RuleSets } from "./types";
+import { CompatInfo, LanguageOptions } from "./types";
+
+import assert, { AssertionError } from "node:assert/strict";
 
 // @ts-ignore
 import { FlatESLint } from "eslint/use-at-your-own-risk";
@@ -11,19 +13,30 @@ import { isSameSeverities } from "./utils";
 // eslint-disable-next-line max-statements
 export const compareRules = async (
   configPath: string,
-  compatInfoRuleSets: RuleSets,
+  compatInfo: CompatInfo,
 ) => {
   console.log("Check difference of rules in following paths.");
   const eslint = new FlatESLint({ overrideConfigFile: configPath });
-
   let hasNoDiffs = true;
 
-  for (const [path, rules] of Object.entries(compatInfoRuleSets)) {
-    console.log(`  - ${path}`);
-    const calculated = await eslint.calculateConfigForFile(path);
-    console.log(JSON.stringify(calculated));
+  for (const config of compatInfo.filesConfig) {
+    for (const targetFilePath of config.targetFilePaths) {
+      console.log(`  - ${targetFilePath}`);
 
-    checkSameRules(path, rules, calculated.rules) && (hasNoDiffs = false);
+      const calculated = await eslint.calculateConfigForFile(targetFilePath);
+
+      hasNoDiffs = checkSameRules(
+        targetFilePath,
+        config.rules,
+        calculated.rules,
+      );
+
+      hasNoDiffs = checkSameLanguageOptions(
+        targetFilePath,
+        config.languageOptions,
+        calculated.languageOptions,
+      );
+    }
   }
   hasNoDiffs && console.log(pico.green("✅ No difference in lint rules"));
 };
@@ -33,6 +46,51 @@ type Rules = {
     0 | 1 | 2 | "off" | "warn" | "error",
     ...Array<Record<string, unknown>>,
   ];
+};
+
+const checkSameLanguageOptions = (
+  filePath: string,
+  oldLanguageOptions: LanguageOptions,
+  newLanguageOptions: LanguageOptions,
+) => {
+  let hasNoDiff = true;
+  if (newLanguageOptions.ecmaVersion !== oldLanguageOptions.ecmaVersion) {
+    hasNoDiff = false;
+    errors.setDifferentLanguageOptions(filePath, {
+      type: "ecmaVersion",
+      oldOption: oldLanguageOptions.ecmaVersion,
+      newOption: newLanguageOptions.ecmaVersion,
+    });
+  }
+  if (newLanguageOptions.sourceType !== oldLanguageOptions.sourceType) {
+    hasNoDiff = false;
+    errors.setDifferentLanguageOptions(filePath, {
+      type: "sourceType",
+      oldOption: oldLanguageOptions.sourceType,
+      newOption: newLanguageOptions.sourceType,
+    });
+  }
+  if (!isEqual(newLanguageOptions.globals, oldLanguageOptions.globals)) {
+    hasNoDiff = false;
+    errors.setDifferentLanguageOptions(filePath, {
+      type: "globals",
+      oldOption: oldLanguageOptions.globals,
+      newOption: newLanguageOptions.globals,
+    });
+  }
+
+  if (
+    !isEqual(newLanguageOptions.parserOptions, oldLanguageOptions.parserOptions)
+  ) {
+    hasNoDiff = false;
+    errors.setDifferentLanguageOptions(filePath, {
+      type: "parserOptions",
+      oldOption: oldLanguageOptions.parserOptions,
+      newOption: newLanguageOptions.parserOptions,
+    });
+  }
+
+  return hasNoDiff;
 };
 
 const checkSameRules = (filePath: string, oldRules: Rules, newRules: Rules) => {

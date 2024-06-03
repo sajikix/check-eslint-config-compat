@@ -66,7 +66,7 @@ export const compareWithCompatInfo = async ({
 
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
-    await compareRules(configPath, compatInfo.ruleSets);
+    await compareRules(configPath, compatInfo);
     errors.reportDifferentRules();
 
     console.log("============================");

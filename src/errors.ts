@@ -48,6 +48,10 @@ export class Errors {
         newOption: Record<string, unknown>;
       }>;
       differentLanguageOptions?: LanguageOptionsDiff[];
+      differentSettings?: {
+        oldSettings: Record<string, unknown> | undefined;
+        newSettings: Record<string, unknown> | undefined;
+      };
     };
   };
 
@@ -144,6 +148,17 @@ export class Errors {
       : (this.differentRules[filePath].differentLanguageOptions = [
           languageOptionsDiff,
         ]);
+  }
+
+  setDifferentSettings(
+    filePath: string,
+    oldSettings?: Record<string, unknown>,
+    newSettings?: Record<string, unknown>,
+  ) {
+    this.differentRules[filePath].differentSettings = {
+      oldSettings,
+      newSettings,
+    };
   }
 
   reportInvalidConfig() {
@@ -265,6 +280,18 @@ export class Errors {
                     )} -> ${truncateJson(JSON.stringify(_diff.newOption))}`,
                 )
                 .join("\n"),
+            ),
+          );
+        }
+        if (diff.differentSettings) {
+          console.error(pico.red("- following settings are different."));
+          console.error(
+            pico.red(
+              `  - ${truncateJson(
+                JSON.stringify(diff.differentSettings.oldSettings),
+              )} -> ${truncateJson(
+                JSON.stringify(diff.differentSettings.newSettings),
+              )}`,
             ),
           );
         }

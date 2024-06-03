@@ -1,9 +1,9 @@
 import { cosmiconfig } from "cosmiconfig";
-import { FilesConfig, Rules } from "./types";
-import omit from "lodash/omit";
-
 import { ESLint } from "eslint";
+import omit from "lodash/omit";
+import { FilesConfig } from "./types";
 import { isSameLanguageOptions, isSameRules, normalizeRules } from "./utils";
+import globals from "globals";
 
 export const extractRules = async ({
   configPath,
@@ -21,12 +21,26 @@ export const extractRules = async ({
   const eslint = new ESLint({ overrideConfig: config });
   for (const targetFilePath of targetFilePaths) {
     const calculated = await eslint.calculateConfigForFile(targetFilePath);
+    const calculatedGlobals = {
+      ...calculated.globals,
+      ...Object.entries(calculated?.env)
+        .filter(([, value]) => value)
+        .map(([key]) => key)
+        .reduce((acc, key) => {
+          // @ts-ignore
+          return { ...acc, ...globals[key] };
+        }, {}),
+    };
+    const calculatedParserOptions = omit(calculated.parserOptions, [
+      "ecmaVersion",
+      "sourceType",
+    ]);
     const sameConfigIndex = ruleSettings.findIndex((ruleConfig) => {
       const newLanguageOptions = {
         ecmaVersion: calculated.parserOptions?.ecmaVersion,
         sourceType: calculated.parserOptions?.sourceType,
-        globals: calculated.globals,
-        parserOptions: calculated.parserOptions,
+        globals: calculatedGlobals,
+        parserOptions: calculatedParserOptions,
       };
 
       return (
@@ -47,14 +61,10 @@ export const extractRules = async ({
           languageOptions: {
             ecmaVersion: calculated.parserOptions?.ecmaVersion,
             sourceType: calculated.parserOptions?.sourceType,
-            globals: calculated.globals,
-            parserOptions: omit(calculated.parserOptions, [
-              "ecmaVersion",
-              "sourceType",
-            ]),
+            globals: calculatedGlobals,
+            parserOptions: calculatedParserOptions,
           },
           settings: calculated?.settings,
-          env: calculated?.env,
         },
       ];
     }

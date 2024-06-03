@@ -2,16 +2,13 @@ import arrayDiff from "lodash/difference";
 import isEqual from "lodash/isEqual";
 import pico from "picocolors";
 import { CompatInfo, LanguageOptions } from "./types";
-
-import assert, { AssertionError } from "node:assert/strict";
-
 // @ts-ignore
 import { FlatESLint } from "eslint/use-at-your-own-risk";
 import { errors } from "./errors";
 import { isSameSeverities } from "./utils";
 
 // eslint-disable-next-line max-statements
-export const compareRules = async (
+export const compareConfigs = async (
   configPath: string,
   compatInfo: CompatInfo,
 ) => {
@@ -35,6 +32,12 @@ export const compareRules = async (
         targetFilePath,
         config.languageOptions,
         calculated.languageOptions,
+      );
+
+      hasNoDiffs = checkSameSettings(
+        targetFilePath,
+        config.settings,
+        calculated.settings,
       );
     }
   }
@@ -89,8 +92,19 @@ const checkSameLanguageOptions = (
       newOption: newLanguageOptions.parserOptions,
     });
   }
-
   return hasNoDiff;
+};
+
+const checkSameSettings = (
+  filePath: string,
+  oldSettings?: Record<string, unknown>,
+  newSettings?: Record<string, unknown>,
+) => {
+  if (!isEqual(newSettings, oldSettings)) {
+    errors.setDifferentSettings(filePath, oldSettings, newSettings);
+    return false;
+  }
+  return true;
 };
 
 const checkSameRules = (filePath: string, oldRules: Rules, newRules: Rules) => {

@@ -49,6 +49,7 @@
     "commander": "^11.1.0",
     "cosmiconfig": "^9.0.0",
     "glob": "^10.3.10",
+    "globals": "^15.3.0",
     "lodash": "^4.17.21",
     "picocolors": "^1.0.0"
   },

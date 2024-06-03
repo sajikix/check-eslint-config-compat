@@ -1,7 +1,7 @@
 import { glob } from "glob";
 import { lstat, readFile, unlink, writeFile } from "node:fs/promises";
 import pico from "picocolors";
-import { compareRules } from "./compareRules";
+import { compareConfigs } from "./compareConfigs";
 import { compareTargetFilePaths } from "./compareTarget";
 import { errors } from "./errors";
 import { getTargetFilePaths } from "./getTargetFilePaths";
@@ -66,7 +66,7 @@ export const compareWithCompatInfo = async ({
 
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
-    await compareRules(configPath, compatInfo);
+    await compareConfigs(configPath, compatInfo);
     errors.reportDifferentRules();
 
     console.log("============================");

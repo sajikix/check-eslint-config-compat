@@ -29,9 +29,13 @@
     "url": "https://github.com/sajikix/check-eslint-config-compat/issues"
   },
   "homepage": "https://github.com/sajikix/check-eslint-config-compat#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
-    "@cybozu/eslint-config": "^22.0.2",
+    "@eslint/eslintrc": "^3.0.2",
     "@tsconfig/node18": "^18.2.2",
+    "@types/eslint__eslintrc": "^2.1.1",
     "@types/lodash": "^4.14.202",
     "@types/node": "^20.10.4",
     "eslint": "^8.55.0",
@@ -43,6 +47,7 @@
     "commander": "^11.1.0",
     "cosmiconfig": "^9.0.0",
     "glob": "^10.3.10",
+    "globals": "^15.3.0",
     "lodash": "^4.17.21",
     "picocolors": "^1.0.0"
   },

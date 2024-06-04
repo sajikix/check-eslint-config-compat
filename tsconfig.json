@@ -1,6 +1,7 @@
 {
   "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
+    "target": "esnext",
     "outDir": "dist",
     "declaration": true,
     "esModuleInterop": true,

@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 .envrc
+.compat.json
+test/

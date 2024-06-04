@@ -30,15 +30,6 @@ export const validateConfig = async (
             "🚨 ESLint config is invalid. Detailed errors are as follows.",
             ...errorMessages.map((message) => `  ${message}`),
           ]);
-          // console.error(
-          //   pico.red(
-          //     "🚨 ESLint config is invalid. Detailed errors are as follows.",
-          //   ),
-          // );
-          // errorMessages.forEach((message) => {
-          //   console.error(pico.red(`  ${message}`));
-          // });
-          // throw new Error();
         }
         console.log(pico.green("✅ This config is valid."));
         resolve();

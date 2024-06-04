@@ -77,6 +77,6 @@ export const compareWithCompatInfo = async ({
         )
       : console.log(pico.red("🚨 check failed"));
   } catch (e) {
-    console.error(pico.red("Check failed...."), e);
+    console.error(pico.red("incompatible with compatInfo...."), e);
   }
 };

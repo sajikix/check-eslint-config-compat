@@ -249,6 +249,7 @@ export class Errors {
               : undefined,
           ].filter(Boolean),
         );
+      process.exit(1);
     }
   }
 

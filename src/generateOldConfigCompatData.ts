@@ -44,8 +44,11 @@ export const generateOldConfigCompatData = async ({
       targetDir: targetDir,
     });
 
+    // exclude .eslintrc.js and eslint.config.js
     const filteredTargets = targets.filter(
-      (target) => !minimatch(target, "**/.eslintrc.js"),
+      (target) =>
+        !minimatch(target, "**/.eslintrc.js") &&
+        !minimatch(target, "**/eslint.config.js"),
     );
 
     console.log("============================");

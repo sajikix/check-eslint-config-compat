@@ -13,6 +13,7 @@ program
   )
   .option("-o, --output <string>", "Path for output file")
   .option("-r, --overrides <string>", "Override patterns")
+  .option("-t, --target <string>", "target directory")
   .action((options) => {
     if (!options.config) {
       console.error("Config path is required.");
@@ -21,6 +22,7 @@ program
     generateOldConfigCompatData({
       configPath: options.config,
       outputPath: options.output,
+      targetDir: options.target,
       supportExtensions: options.ext.split(","),
     });
   });

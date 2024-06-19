@@ -109,6 +109,17 @@ export class Errors {
     oldSeverity: string | number,
     newSeverity: string | number,
   ) {
+    if (!this.differentRules) {
+      this.differentRules = {};
+    }
+    if (!this.differentRules[filePath]) {
+      this.differentRules = {
+        ...this.differentRules,
+        [filePath]: {
+          filePath,
+        },
+      };
+    }
     this.differentRules[filePath].differentSeverities
       ? this.differentRules[filePath].differentSeverities?.push({
           key,
@@ -126,6 +137,17 @@ export class Errors {
     oldOption: Record<string, unknown>,
     newOption: Record<string, unknown>,
   ) {
+    if (!this.differentRules) {
+      this.differentRules = {};
+    }
+    if (!this.differentRules[filePath]) {
+      this.differentRules = {
+        ...this.differentRules,
+        [filePath]: {
+          filePath,
+        },
+      };
+    }
     this.differentRules[filePath].differentRuleOptions
       ? this.differentRules[filePath].differentRuleOptions?.push({
           key,
@@ -141,6 +163,17 @@ export class Errors {
     filePath: string,
     languageOptionsDiff: LanguageOptionsDiff,
   ) {
+    if (!this.differentRules) {
+      this.differentRules = {};
+    }
+    if (!this.differentRules[filePath]) {
+      this.differentRules = {
+        ...this.differentRules,
+        [filePath]: {
+          filePath,
+        },
+      };
+    }
     this.differentRules[filePath].differentLanguageOptions
       ? this.differentRules[filePath].differentLanguageOptions?.push(
           languageOptionsDiff,
@@ -155,6 +188,17 @@ export class Errors {
     oldSettings?: Record<string, unknown>,
     newSettings?: Record<string, unknown>,
   ) {
+    if (!this.differentRules) {
+      this.differentRules = {};
+    }
+    if (!this.differentRules[filePath]) {
+      this.differentRules = {
+        ...this.differentRules,
+        [filePath]: {
+          filePath,
+        },
+      };
+    }
     this.differentRules[filePath].differentSettings = {
       oldSettings,
       newSettings,

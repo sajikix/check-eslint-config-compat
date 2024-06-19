@@ -8,6 +8,7 @@ import { getTargetFilePaths } from "./getTargetFilePaths";
 import { CompatInfo } from "./types";
 import { getTempFilePath } from "./utils";
 import { validateConfig } from "./validateConfig";
+import { minimatch } from "minimatch";
 
 type Options = {
   configPath: string;
@@ -60,8 +61,11 @@ export const compareWithCompatInfo = async ({
       extensions: supportExtensions,
       targetDir: targetDir,
     });
+    const filteredTargets = targets.filter(
+      (target) => !minimatch(target, "**/eslint.config.js"),
+    );
     errors.reportGetTargetFilesFailed();
-    compareTargetFilePaths(compatInfo.targets, targets);
+    compareTargetFilePaths(compatInfo.targets, filteredTargets);
     errors.reportDifferentTargetFiles();
 
     console.log("============================");

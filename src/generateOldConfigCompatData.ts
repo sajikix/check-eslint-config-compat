@@ -5,6 +5,7 @@ import { writeFile, unlink, lstat } from "node:fs/promises";
 import { extractRules } from "./extractRules";
 import { getTargetFilePaths } from "./getTargetFilePaths";
 import { CompatInfo } from "./types";
+import { minimatch } from "minimatch";
 
 type Options = {
   configPath: string;
@@ -43,18 +44,22 @@ export const generateOldConfigCompatData = async ({
       targetDir: targetDir,
     });
 
+    const filteredTargets = targets.filter(
+      (target) => !minimatch(target, "**/.eslintrc.js"),
+    );
+
     console.log("============================");
     console.log(pico.blue("Step3. Get rule-sets for each file"));
 
     const filesConfig = await extractRules({
       configPath: configPath,
-      targetFilePaths: targets,
+      targetFilePaths: filteredTargets,
     });
 
     console.log("============================");
 
     const compatData: CompatInfo = {
-      targets,
+      targets: filteredTargets,
       filesConfig,
       supportExtensions,
     };

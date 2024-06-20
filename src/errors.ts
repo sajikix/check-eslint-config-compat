@@ -1,10 +1,14 @@
 import pico from "picocolors";
 import { LanguageOptions } from "./types";
-import { diff as formatDiff } from "jest-diff";
+import { diff as formatDiff, DiffOptions } from "jest-diff";
 
-const options = {
-  aAnnotation: "OldConfig",
-  bAnnotation: "NewConfig",
+const options: DiffOptions = {
+  aAnnotation: "Deleted from oldConfig",
+  bAnnotation: "Added in newConfig.",
+  contextLines: 1,
+  expand: false,
+  aColor: pico.green,
+  bColor: pico.magenta,
 };
 
 type LanguageOptionsDiff =
@@ -265,9 +269,10 @@ export class Errors {
       Object.values(this.differentRules).forEach((diff) => {
         console.error(`--------------------------------------------`);
         console.error(`path : ${diff.filePath}`);
-        diff.increased &&
+        console.error("");
+        if (diff.increased) {
+          console.error(pico.red("following rules are increased."));
           console.error(
-            pico.red("following rules are increased."),
             [
               ...diff.increased.slice(0, 10),
               diff.increased.length > 10
@@ -275,10 +280,12 @@ export class Errors {
                 : undefined,
             ].filter(Boolean),
           );
+          console.error("");
+        }
 
-        diff.decreased &&
+        if (diff.decreased) {
+          console.error(pico.red("following rules are reduced."));
           console.error(
-            pico.red("following rules are reduced."),
             [
               ...diff.decreased.slice(0, 10),
               diff.decreased.length > 10
@@ -286,6 +293,8 @@ export class Errors {
                 : undefined,
             ].filter(Boolean),
           );
+          console.error("");
+        }
 
         if (diff.differentSeverities) {
           console.error(pico.red("following rules have different severities."));
@@ -299,40 +308,53 @@ export class Errors {
           );
         }
         if (diff.differentRuleOptions) {
-          console.error(pico.red("following rules have different options."));
           diff.differentRuleOptions.forEach((ruleOptionsDiff) => {
-            console.error(pico.red(`- ${ruleOptionsDiff.key}`));
             console.error(
-              formatDiff(
-                ruleOptionsDiff.oldOption,
-                ruleOptionsDiff.newOption,
-                options,
+              pico.red(`"${ruleOptionsDiff.key}" rule have different options.`),
+            );
+            console.error(
+              indentMessage(
+                formatDiff(
+                  ruleOptionsDiff.oldOption,
+                  ruleOptionsDiff.newOption,
+                  options,
+                ),
               ),
             );
+            console.error("");
           });
         }
         if (diff.differentLanguageOptions) {
-          console.error(pico.red("following language options are different."));
           diff.differentLanguageOptions.forEach((languageOptionsDiff) => {
-            console.error(pico.red(`- ${languageOptionsDiff.type}`));
             console.error(
-              formatDiff(
-                languageOptionsDiff.oldOption,
-                languageOptionsDiff.newOption,
-                options,
+              pico.red(
+                `language option : "${languageOptionsDiff.type}" is different.`,
               ),
             );
+            console.error(
+              indentMessage(
+                formatDiff(
+                  languageOptionsDiff.oldOption,
+                  languageOptionsDiff.newOption,
+                  options,
+                ),
+              ),
+            );
+            console.error("");
           });
         }
         if (diff.differentSettings) {
-          console.error(pico.red("- following settings are different."));
+          console.error(pico.red("settings are different."));
           console.error(
-            formatDiff(
-              diff.differentSettings.oldSettings,
-              diff.differentSettings.newSettings,
-              options,
+            indentMessage(
+              formatDiff(
+                diff.differentSettings.oldSettings,
+                diff.differentSettings.newSettings,
+                options,
+              ),
             ),
           );
+          console.error("");
         }
       });
     }
@@ -349,3 +371,11 @@ export class Errors {
 }
 
 export const errors = new Errors();
+
+const indentMessage = (message: string | null) => {
+  !message && (message = "");
+  return message
+    .split("\n")
+    .map((line) => `  ${line.trim()}`)
+    .join("\n");
+};

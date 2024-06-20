@@ -1,6 +1,7 @@
 import pico from "picocolors";
 import { LanguageOptions } from "./types";
 import { diff as formatDiff, DiffOptions } from "jest-diff";
+import { diff as deepDiff } from "deep-diff";
 
 const options: DiffOptions = {
   aAnnotation: "Deleted from oldConfig",
@@ -33,6 +34,26 @@ type LanguageOptionsDiff =
       oldOption: LanguageOptions["parserOptions"];
     };
 
+type RuleDiff = {
+  filePath: string;
+  decreased?: string[];
+  increased?: string[];
+  differentSeverities?: Array<{
+    key: string;
+    oldSeverity: string | number;
+    newSeverity: string | number;
+  }>;
+  differentRuleOptions?: Array<{
+    key: string;
+    oldOption: Record<string, unknown>;
+    newOption: Record<string, unknown>;
+  }>;
+  differentLanguageOptions?: LanguageOptionsDiff[];
+  differentSettings?: {
+    oldSettings: Record<string, unknown> | undefined;
+    newSettings: Record<string, unknown> | undefined;
+  };
+};
 export class Errors {
   invalidConfig: string[];
   getTargetFilesFailed: string | undefined;
@@ -43,26 +64,7 @@ export class Errors {
       }
     | undefined;
   differentRules: {
-    [filePath: string]: {
-      filePath: string;
-      decreased?: string[];
-      increased?: string[];
-      differentSeverities?: Array<{
-        key: string;
-        oldSeverity: string | number;
-        newSeverity: string | number;
-      }>;
-      differentRuleOptions?: Array<{
-        key: string;
-        oldOption: Record<string, unknown>;
-        newOption: Record<string, unknown>;
-      }>;
-      differentLanguageOptions?: LanguageOptionsDiff[];
-      differentSettings?: {
-        oldSettings: Record<string, unknown> | undefined;
-        newSettings: Record<string, unknown> | undefined;
-      };
-    };
+    [filePath: string]: RuleDiff;
   };
 
   constructor() {
@@ -266,9 +268,24 @@ export class Errors {
   reportDifferentRules() {
     if (Object.keys(this.differentRules).length > 0) {
       console.error(pico.red("🚨 There are differences in lint rules"));
-      Object.values(this.differentRules).forEach((diff) => {
+
+      const diffData: { paths: string[]; ruleDiff: RuleDiff }[] = [];
+
+      Object.entries(this.differentRules).forEach(([filePath, diff]) => {
+        const found = diffData.findIndex((item) =>
+          isEqualWithIgnore(item.ruleDiff, diff, [["filePath"]]),
+        );
+        if (found >= 0) {
+          diffData[found].paths.push(filePath);
+        } else {
+          diffData.push({ paths: [filePath], ruleDiff: diff });
+        }
+      });
+
+      diffData.forEach(({ ruleDiff: diff, paths }) => {
         console.error(`--------------------------------------------`);
-        console.error(`path : ${diff.filePath}`);
+        console.error("target files:");
+        paths.forEach((path) => console.error(`  - ${path}`));
         console.error("");
         if (diff.increased) {
           console.error(pico.red("following rules are increased."));
@@ -378,4 +395,30 @@ const indentMessage = (message: string | null) => {
     .split("\n")
     .map((line) => `  ${line.trim()}`)
     .join("\n");
+};
+
+const isEqual = (lhs: unknown, rhs: unknown) => {
+  const differences = deepDiff(lhs, rhs);
+  return differences ? differences.length === 0 : true;
+};
+
+const isEqualWithIgnore = (
+  lhs: unknown,
+  rhs: unknown,
+  ignorePaths: string[][] | undefined,
+) => {
+  const differences = deepDiff(lhs, rhs);
+  if (!differences) {
+    return true;
+  }
+  if (!ignorePaths) {
+    return isEqual(lhs, rhs);
+  }
+  return (
+    differences.filter((difference) => {
+      return !ignorePaths.some((ignorePath) => {
+        return isEqual(difference.path, ignorePath);
+      });
+    }).length === 0
+  );
 };

@@ -61,8 +61,11 @@ export const compareWithCompatInfo = async ({
       extensions: supportExtensions,
       targetDir: targetDir,
     });
+    // exclude .eslintrc.js and eslint.config.js
     const filteredTargets = targets.filter(
-      (target) => !minimatch(target, "**/eslint.config.js"),
+      (target) =>
+        !minimatch(target, "**/.eslintrc.js") &&
+        !minimatch(target, "**/eslint.config.js"),
     );
     errors.reportGetTargetFilesFailed();
     compareTargetFilePaths(compatInfo.targets, filteredTargets);

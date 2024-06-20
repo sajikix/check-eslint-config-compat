@@ -1,6 +1,7 @@
 import pico from "picocolors";
 import { LanguageOptions } from "./types";
 import { diff as formatDiff, DiffOptions } from "jest-diff";
+import { diff as deepDiff } from "deep-diff";
 
 const options: DiffOptions = {
   aAnnotation: "Deleted from oldConfig",
@@ -266,97 +267,113 @@ export class Errors {
   reportDifferentRules() {
     if (Object.keys(this.differentRules).length > 0) {
       console.error(pico.red("🚨 There are differences in lint rules"));
-      Object.values(this.differentRules).forEach((diff) => {
-        console.error(`--------------------------------------------`);
-        console.error(`path : ${diff.filePath}`);
-        console.error("");
-        if (diff.increased) {
-          console.error(pico.red("following rules are increased."));
-          console.error(
-            [
-              ...diff.increased.slice(0, 10),
-              diff.increased.length > 10
-                ? `...and ${diff.increased.length - 10} more rules`
-                : undefined,
-            ].filter(Boolean),
-          );
-          console.error("");
-        }
 
-        if (diff.decreased) {
-          console.error(pico.red("following rules are reduced."));
-          console.error(
-            [
-              ...diff.decreased.slice(0, 10),
-              diff.decreased.length > 10
-                ? `...and ${diff.decreased.length - 10} more rules`
-                : undefined,
-            ].filter(Boolean),
-          );
-          console.error("");
-        }
+      const a: { paths: string[]; diffData: any }[] = [];
 
-        if (diff.differentSeverities) {
-          console.error(pico.red("following rules have different severities."));
-          console.error(
-            diff.differentSeverities
-              .map(
-                (_diff) =>
-                  `- ${_diff.key} : ${_diff.oldSeverity} -> ${_diff.newSeverity}`,
-              )
-              .join("\n"),
-          );
-        }
-        if (diff.differentRuleOptions) {
-          diff.differentRuleOptions.forEach((ruleOptionsDiff) => {
-            console.error(
-              pico.red(`"${ruleOptionsDiff.key}" rule have different options.`),
-            );
-            console.error(
-              indentMessage(
-                formatDiff(
-                  ruleOptionsDiff.oldOption,
-                  ruleOptionsDiff.newOption,
-                  options,
-                ),
-              ),
-            );
-            console.error("");
-          });
-        }
-        if (diff.differentLanguageOptions) {
-          diff.differentLanguageOptions.forEach((languageOptionsDiff) => {
-            console.error(
-              pico.red(
-                `language option : "${languageOptionsDiff.type}" is different.`,
-              ),
-            );
-            console.error(
-              indentMessage(
-                formatDiff(
-                  languageOptionsDiff.oldOption,
-                  languageOptionsDiff.newOption,
-                  options,
-                ),
-              ),
-            );
-            console.error("");
-          });
-        }
-        if (diff.differentSettings) {
-          console.error(pico.red("settings are different."));
-          console.error(
-            indentMessage(
-              formatDiff(
-                diff.differentSettings.oldSettings,
-                diff.differentSettings.newSettings,
-                options,
-              ),
-            ),
-          );
-          console.error("");
+      Object.entries(this.differentRules).forEach(([filePath, diff]) => {
+        const found = a.findIndex((item) =>
+          isEqualWithIgnore(item.diffData, diff, [["filePath"]]),
+        );
+        if (found >= 0) {
+          a[found].paths.push(filePath);
+        } else {
+          a.push({ paths: [filePath], diffData: diff });
         }
       });
+
+      console.log(a);
+
+      // Object.values(this.differentRules).forEach((diff) => {
+      //   console.error(`--------------------------------------------`);
+      //   console.error(`path : ${diff.filePath}`);
+      //   console.error("");
+      //   if (diff.increased) {
+      //     console.error(pico.red("following rules are increased."));
+      //     console.error(
+      //       [
+      //         ...diff.increased.slice(0, 10),
+      //         diff.increased.length > 10
+      //           ? `...and ${diff.increased.length - 10} more rules`
+      //           : undefined,
+      //       ].filter(Boolean),
+      //     );
+      //     console.error("");
+      //   }
+
+      //   if (diff.decreased) {
+      //     console.error(pico.red("following rules are reduced."));
+      //     console.error(
+      //       [
+      //         ...diff.decreased.slice(0, 10),
+      //         diff.decreased.length > 10
+      //           ? `...and ${diff.decreased.length - 10} more rules`
+      //           : undefined,
+      //       ].filter(Boolean),
+      //     );
+      //     console.error("");
+      //   }
+
+      //   if (diff.differentSeverities) {
+      //     console.error(pico.red("following rules have different severities."));
+      //     console.error(
+      //       diff.differentSeverities
+      //         .map(
+      //           (_diff) =>
+      //             `- ${_diff.key} : ${_diff.oldSeverity} -> ${_diff.newSeverity}`,
+      //         )
+      //         .join("\n"),
+      //     );
+      //   }
+      //   if (diff.differentRuleOptions) {
+      //     diff.differentRuleOptions.forEach((ruleOptionsDiff) => {
+      //       console.error(
+      //         pico.red(`"${ruleOptionsDiff.key}" rule have different options.`),
+      //       );
+      //       console.error(
+      //         indentMessage(
+      //           formatDiff(
+      //             ruleOptionsDiff.oldOption,
+      //             ruleOptionsDiff.newOption,
+      //             options,
+      //           ),
+      //         ),
+      //       );
+      //       console.error("");
+      //     });
+      //   }
+      //   if (diff.differentLanguageOptions) {
+      //     diff.differentLanguageOptions.forEach((languageOptionsDiff) => {
+      //       console.error(
+      //         pico.red(
+      //           `language option : "${languageOptionsDiff.type}" is different.`,
+      //         ),
+      //       );
+      //       console.error(
+      //         indentMessage(
+      //           formatDiff(
+      //             languageOptionsDiff.oldOption,
+      //             languageOptionsDiff.newOption,
+      //             options,
+      //           ),
+      //         ),
+      //       );
+      //       console.error("");
+      //     });
+      //   }
+      //   if (diff.differentSettings) {
+      //     console.error(pico.red("settings are different."));
+      //     console.error(
+      //       indentMessage(
+      //         formatDiff(
+      //           diff.differentSettings.oldSettings,
+      //           diff.differentSettings.newSettings,
+      //           options,
+      //         ),
+      //       ),
+      //     );
+      //     console.error("");
+      //   }
+      // });
     }
   }
 
@@ -378,4 +395,30 @@ const indentMessage = (message: string | null) => {
     .split("\n")
     .map((line) => `  ${line.trim()}`)
     .join("\n");
+};
+
+const isEqual = (lhs: unknown, rhs: unknown) => {
+  const differences = deepDiff(lhs, rhs);
+  return differences ? differences.length === 0 : true;
+};
+
+const isEqualWithIgnore = (
+  lhs: unknown,
+  rhs: unknown,
+  ignorePaths: string[][] | undefined,
+) => {
+  const differences = deepDiff(lhs, rhs);
+  if (!differences) {
+    return true;
+  }
+  if (!ignorePaths) {
+    return isEqual(lhs, rhs);
+  }
+  return (
+    differences.filter((difference) => {
+      return !ignorePaths.some((ignorePath) => {
+        return isEqual(difference.path, ignorePath);
+      });
+    }).length === 0
+  );
 };

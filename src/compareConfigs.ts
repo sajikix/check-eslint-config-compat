@@ -41,6 +41,7 @@ export const compareConfigs = async (
       );
     }
   }
+  console.log("");
   hasNoDiffs && console.log(pico.green("✅ No difference in lint rules"));
 };
 

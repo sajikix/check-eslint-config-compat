@@ -18,27 +18,17 @@ export const compareConfigs = async (
 
   for (const config of compatInfo.filesConfig) {
     for (const targetFilePath of config.targetFilePaths) {
-      console.log(`  - ${targetFilePath}`);
-
       const calculated = await eslint.calculateConfigForFile(targetFilePath);
 
-      hasNoDiffs = checkSameRules(
-        targetFilePath,
-        config.rules,
-        calculated.rules,
-      );
-
-      hasNoDiffs = checkSameLanguageOptions(
-        targetFilePath,
-        config.languageOptions,
-        calculated.languageOptions,
-      );
-
-      hasNoDiffs = checkSameSettings(
-        targetFilePath,
-        config.settings,
-        calculated.settings,
-      );
+      const hasNoDiffs_ =
+        checkSameRules(targetFilePath, config.rules, calculated.rules) &&
+        checkSameLanguageOptions(
+          targetFilePath,
+          config.languageOptions,
+          calculated.languageOptions,
+        ) &&
+        checkSameSettings(targetFilePath, config.settings, calculated.settings);
+      if (hasNoDiffs) hasNoDiffs = hasNoDiffs_;
     }
   }
   console.log("");

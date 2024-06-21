@@ -31,7 +31,8 @@ export const validateConfig = async (
             ...errorMessages.map((message) => `  ${message}`),
           ]);
         }
-        console.log(pico.green("✅ This config is valid."));
+        errors.invalidConfig.length === 0 &&
+          console.log(pico.green("✅ This config is valid."));
         resolve();
       },
     );

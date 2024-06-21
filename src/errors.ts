@@ -284,7 +284,7 @@ export class Errors {
 
       diffData.forEach(({ ruleDiff: diff, paths }) => {
         console.error(`--------------------------------------------`);
-        console.error("target files:");
+        console.error("Diffs were found in the following files:");
         paths.forEach((path) => console.error(`  - ${path}`));
         console.error("");
         if (diff.increased) {
